@@ -16,10 +16,13 @@
  * Авторизация и проверка пользователя выполняются сервером.
  *
  * API:
- * - по умолчанию используется /api;
+ * - по умолчанию используется публичный FREEzzzGames backend;
  * - внешний backend может быть задан через
  *   window.__FREEZZGAMES_API_BASE_URL__.
  */
+
+const DEFAULT_API_BASE_URL =
+    'https://universe-fjwj.onrender.com/api';
 
 const TelegramAdapter = (() => {
     let webApp = null;
@@ -38,7 +41,7 @@ const TelegramAdapter = (() => {
             }
         }
 
-        return '/api';
+        return DEFAULT_API_BASE_URL;
     };
 
     function detect() {
