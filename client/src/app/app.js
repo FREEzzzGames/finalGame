@@ -9,33 +9,34 @@
  * - инициализировать Telegram;
  * - авторизовать Telegram-пользователя через сервер;
  * - создать Main World;
- * - передать управление игровому модулю.
+ * - создать Geek Chat Widget;
+ * - передать проверенный Telegram-профиль в Chat;
+ * - передать управление игровым модулям.
  *
- * Игровая логика находится в world/world.js.
+ * Архитектура:
+ *
+ * Telegram WebApp
+ *      ↓
+ * TelegramAdapter
+ *      ↓
+ * server authentication
+ *      ↓
+ * playerSession
+ *      ↓
+ * ┌───────────────┐
+ * │               │
+ * World        ChatWidget
+ *                ↓
+ *              ChatUI
+ *                ↓
+ *           Chat cluster
  *
  * ВАЖНО:
  * Telegram Mini App является основным целевым runtime.
  *
- * Авторизация:
- *
- * Telegram WebApp
- *      ↓
- * initData
- *      ↓
- * TelegramAdapter.authenticate()
- *      ↓
- * GET /state
- *      ↓
- * серверная проверка Telegram
- *      ↓
- * verified profile + game state
- *
- * В браузере вне Telegram приложение продолжает
- * работать в тестовом режиме без Telegram-сессии.
- *
- * Версия модулей используется для исключения ситуации,
- * когда после обновления Mini App браузер/Telegram
- * смешивает старую и новую версии ES-модулей.
+ * initDataUnsafe НЕ используется.
+ * Профиль игрока приходит только после
+ * серверной проверки Telegram initData.
  */
 
 const APP_VERSION = '0.2.1';
@@ -52,12 +53,15 @@ const bootStatus =
 
 let world = null;
 
+let chatWidget = null;
+
 let playerSession = null;
 
 let unsubscribeTelegramViewport = null;
 
 let TelegramAdapter = null;
 let World = null;
+let ChatWidget = null;
 
 function updateBootStatus(message) {
     if (!bootStatus) {
@@ -100,15 +104,24 @@ async function loadModules() {
             `../world/world.js?v=${MODULE_VERSION}`
         );
 
+    const chatWidgetModule =
+        await import(
+            `../chat/chat-widget.js?v=${MODULE_VERSION}`
+        );
+
     TelegramAdapter =
         telegramModule.default;
 
     World =
         worldModule.default;
 
+    ChatWidget =
+        chatWidgetModule.default;
+
     if (
         !TelegramAdapter ||
-        !World
+        !World ||
+        !ChatWidget
     ) {
         throw new Error(
             '[FREEzzzGames] Required application modules were not loaded.'
@@ -171,7 +184,10 @@ async function authenticateTelegram() {
     const session =
         await TelegramAdapter.authenticate();
 
-    if (!session || !session.authenticated) {
+    if (
+        !session ||
+        !session.authenticated
+    ) {
         throw new Error(
             `[FREEzzzGames] Telegram authentication failed: ${
                 session && session.error
@@ -207,6 +223,29 @@ function createWorldMount() {
     return mount;
 }
 
+function createChatMount() {
+    if (!appRoot) {
+        throw new Error(
+            '[FREEzzzGames] Application root #app was not found.'
+        );
+    }
+
+    const mount =
+        document.createElement('div');
+
+    mount.id =
+        'chat-widget-mount';
+
+    mount.className =
+        'chat-widget-mount';
+
+    appRoot.appendChild(
+        mount
+    );
+
+    return mount;
+}
+
 function startWorld() {
     if (!World) {
         throw new Error(
@@ -221,6 +260,87 @@ function startWorld() {
         new World(mount);
 
     return world;
+}
+
+function getVerifiedChatAuthor() {
+    if (
+        !playerSession ||
+        !playerSession.authenticated ||
+        !playerSession.profile
+    ) {
+        return '';
+    }
+
+    const profile =
+        playerSession.profile;
+
+    /*
+     * Приоритет:
+     *
+     * username
+     * ↓
+     * firstName + lastName
+     * ↓
+     * пустое значение
+     *
+     * Все значения приходят от сервера
+     * после проверки Telegram initData.
+     */
+    if (
+        typeof profile.username === 'string' &&
+        profile.username.trim().length > 0
+    ) {
+        return profile.username.trim();
+    }
+
+    const firstName =
+        typeof profile.firstName === 'string'
+            ? profile.firstName.trim()
+            : '';
+
+    const lastName =
+        typeof profile.lastName === 'string'
+            ? profile.lastName.trim()
+            : '';
+
+    return [
+        firstName,
+        lastName
+    ]
+        .filter(Boolean)
+        .join(' ');
+}
+
+function startChatWidget() {
+    if (!ChatWidget) {
+        throw new Error(
+            '[FREEzzzGames] ChatWidget module is not loaded.'
+        );
+    }
+
+    const mount =
+        createChatMount();
+
+    const author =
+        getVerifiedChatAuthor();
+
+    chatWidget =
+        new ChatWidget({
+            author
+        });
+
+    const mounted =
+        chatWidget.mountTo(
+            mount
+        );
+
+    if (!mounted) {
+        throw new Error(
+            '[FREEzzzGames] Geek Chat Widget could not be mounted.'
+        );
+    }
+
+    return chatWidget;
 }
 
 function applyPlayerSession() {
@@ -277,7 +397,6 @@ async function startApp() {
 
     /*
      * Загружаем игровые модули с новой версией URL.
-     * Это не меняет игровую логику.
      */
     await loadModules();
 
@@ -293,8 +412,8 @@ async function startApp() {
          * Telegram является авторитетным источником
          * идентификации пользователя.
          *
-         * World запускается только после успешной
-         * серверной проверки initData.
+         * World и Chat запускаются только после
+         * успешной серверной проверки initData.
          */
         playerSession =
             await authenticateTelegram();
@@ -320,13 +439,26 @@ async function startApp() {
     appRoot.dataset.initialized =
         'true';
 
+    /*
+     * World остаётся независимым модулем.
+     */
     startWorld();
+
+    /*
+     * Geek Chat получает только подтверждённое
+     * сервером имя пользователя.
+     */
+    startChatWidget();
 
     hideBootScreen();
 
     /*
-     * После создания World даём браузеру закончить layout.
-     * Это только синхронизация layout и не меняет геометрию.
+     * После создания World и Chat даём браузеру
+     * закончить layout.
+     *
+     * Особенно важно для Telegram WebApp,
+     * где viewport может измениться уже после
+     * первоначального запуска.
      */
     requestAnimationFrame(
         () => {
@@ -372,6 +504,10 @@ export {
 
 export {
     world
+};
+
+export {
+    chatWidget
 };
 
 export {
