@@ -9,6 +9,7 @@
  * - горизонтальное перемещение;
  * - вертикальное перемещение;
  * - плавное управление камерой пальцем;
+ * - мягкая сферическая деформация объектов;
  * - tap по объекту;
  * - активная экономика FARM;
  * - здания следующего уровня;
@@ -31,6 +32,19 @@ const WORLD_HEIGHT = 3600;
 const COIN_REWARD = 1;
 const FARM_BASE_COST = 10;
 const FARM_LEVEL_REWARD = 2;
+
+/*
+ * Параметры сферической проекции.
+ *
+ * Центр мира остаётся практически плоским.
+ * К краям объекты:
+ * - заворачиваются внутрь;
+ * - уменьшаются;
+ * - сохраняют своё направление движения.
+ */
+const SPHERE_RADIUS_X_FACTOR = 0.92;
+const SPHERE_RADIUS_Y_FACTOR = 0.92;
+const SPHERE_MIN_SCALE = 0.72;
 
 /*
  * Экономическая лестница.
@@ -516,7 +530,7 @@ class World {
          * вместе с пальцем через pointermove.
          *
          * Поэтому здесь больше НЕ делаем
-         * дополнительный скачок на 180px.
+         * дополнительный скачок.
          */
         if (
             result.type === 'swipe'
@@ -587,6 +601,186 @@ class World {
             nextX,
             nextY
         );
+    }
+
+    /*
+     * Сферическая проекция.
+     *
+     * Мы не меняем реальные координаты
+     * объектов в мире. Меняется только
+     * их визуальное положение на экране.
+     *
+     * Поэтому экономика, объекты,
+     * сохранение и логика остаются
+     * независимыми от визуальной деформации.
+     */
+    getSphereProjection(
+        worldX,
+        worldY
+    ) {
+        if (!this.viewport) {
+            return {
+                translateX: 0,
+                translateY: 0,
+                scale: 1
+            };
+        }
+
+        const rect =
+            this.viewport.getBoundingClientRect();
+
+        const centerX =
+            rect.width / 2;
+
+        const centerY =
+            rect.height / 2;
+
+        const flatX =
+            (worldX - camera.x) *
+                camera.zoom +
+            centerX;
+
+        const flatY =
+            (worldY - camera.y) *
+                camera.zoom +
+            centerY;
+
+        const radiusX =
+            Math.max(
+                1,
+                rect.width *
+                    SPHERE_RADIUS_X_FACTOR
+            );
+
+        const radiusY =
+            Math.max(
+                1,
+                rect.height *
+                    SPHERE_RADIUS_Y_FACTOR
+            );
+
+        const relativeX =
+            flatX - centerX;
+
+        const relativeY =
+            flatY - centerY;
+
+        const normalizedX =
+            Math.max(
+                -1,
+                Math.min(
+                    1,
+                    relativeX / radiusX
+                )
+            );
+
+        const normalizedY =
+            Math.max(
+                -1,
+                Math.min(
+                    1,
+                    relativeY / radiusY
+                )
+            );
+
+        const angleX =
+            normalizedX *
+            Math.PI /
+            2;
+
+        const angleY =
+            normalizedY *
+            Math.PI /
+            2;
+
+        const projectedX =
+            Math.sin(
+                angleX
+            ) *
+            radiusX;
+
+        const projectedY =
+            Math.sin(
+                angleY
+            ) *
+            radiusY;
+
+        const depthX =
+            Math.cos(
+                angleX
+            );
+
+        const depthY =
+            Math.cos(
+                angleY
+            );
+
+        const scaleX =
+            SPHERE_MIN_SCALE +
+            (
+                1 -
+                SPHERE_MIN_SCALE
+            ) *
+            depthX;
+
+        const scaleY =
+            SPHERE_MIN_SCALE +
+            (
+                1 -
+                SPHERE_MIN_SCALE
+            ) *
+            depthY;
+
+        const scale =
+            Math.max(
+                SPHERE_MIN_SCALE,
+                Math.sqrt(
+                    scaleX *
+                    scaleY
+                )
+            );
+
+        return {
+            translateX:
+                projectedX -
+                relativeX,
+
+            translateY:
+                projectedY -
+                relativeY,
+
+            scale
+        };
+    }
+
+    applySphereProjection(
+        element,
+        worldX,
+        worldY
+    ) {
+        if (!element) {
+            return;
+        }
+
+        const projection =
+            this.getSphereProjection(
+                worldX,
+                worldY
+            );
+
+        /*
+         * Используем отдельные CSS
+         * transform properties.
+         *
+         * Базовый transform элемента
+         * translate(-50%, -50%) остаётся
+         * нетронутым.
+         */
+        element.style.translate =
+            `${projection.translateX}px ${projection.translateY}px`;
+
+        element.style.scale =
+            `${projection.scale}`;
     }
 
     handleWorldTap(x, y) {
@@ -757,11 +951,6 @@ class World {
             `${building.icon} ${building.title} построен`
         );
 
-        /*
-         * WORKSHOP начинает приносить
-         * первый пассивный доход сразу
-         * после покупки.
-         */
         if (
             id === 'workshop'
         ) {
@@ -769,9 +958,7 @@ class World {
         }
 
         this.render();
-    }
-
-    /*
+    }    /*
      * WORKSHOP:
      * Первый пассивный доход.
      *
@@ -966,7 +1153,7 @@ class World {
         const rect =
             this.viewport.getBoundingClientRect();
 
-         const centerX =
+        const centerX =
             rect.width / 2;
 
         const centerY =
@@ -987,17 +1174,26 @@ class World {
         this.scene.style.transform =
             `translate3d(${offsetX}px, ${offsetY}px, 0)`;
 
+        /*
+         * FARM
+         */
         const farm =
             this.scene.querySelector(
                 '.world-farm'
             );
 
         if (farm) {
+            const farmX =
+                WORLD_WIDTH / 2;
+
+            const farmY =
+                WORLD_HEIGHT / 2;
+
             farm.style.left =
-                `${WORLD_WIDTH / 2}px`;
+                `${farmX}px`;
 
             farm.style.top =
-                `${WORLD_HEIGHT / 2}px`;
+                `${farmY}px`;
 
             const levelElement =
                 farm.querySelector(
@@ -1008,8 +1204,17 @@ class World {
                 levelElement.textContent =
                     `LVL ${this.farmLevel}`;
             }
+
+            this.applySphereProjection(
+                farm,
+                farmX,
+                farmY
+            );
         }
 
+        /*
+         * БУДУЩИЕ ЗДАНИЯ
+         */
         Object.values(
             BUILDINGS
         ).forEach(
@@ -1084,6 +1289,17 @@ class World {
                             ? 'BUILT'
                             : `${building.cost} 🪙`;
                 }
+
+                /*
+                 * Только визуальная сферическая
+                 * проекция. Координаты здания
+                 * в мире не изменяются.
+                 */
+                this.applySphereProjection(
+                    element,
+                    building.x,
+                    building.y
+                );
             }
         );
     }
@@ -1104,6 +1320,24 @@ class World {
         this.lastPointer = null;
 
         gestures.cancel();
+
+        /*
+         * Сбрасываем индивидуальные
+         * визуальные свойства объектов.
+         */
+        if (this.scene) {
+            const objectsInScene =
+                this.scene.querySelectorAll(
+                    '.world-object'
+                );
+
+            objectsInScene.forEach(
+                element => {
+                    element.style.translate = '';
+                    element.style.scale = '';
+                }
+            );
+        }
 
         if (this.root) {
             this.root.innerHTML = '';
