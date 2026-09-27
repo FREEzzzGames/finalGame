@@ -14,11 +14,32 @@
  * ВАЖНО:
  * initDataUnsafe НЕ используется для авторизации.
  * Авторизация и проверка пользователя выполняются сервером.
+ *
+ * API:
+ * - по умолчанию используется /api;
+ * - внешний backend может быть задан через
+ *   window.__FREEZZGAMES_API_BASE_URL__.
  */
 
 const TelegramAdapter = (() => {
     let webApp = null;
     let initialized = false;
+
+    const getApiBaseUrl = () => {
+        if (
+            typeof window !== 'undefined' &&
+            typeof window.__FREEZZGAMES_API_BASE_URL__ === 'string'
+        ) {
+            const value =
+                window.__FREEZZGAMES_API_BASE_URL__.trim();
+
+            if (value.length > 0) {
+                return value.replace(/\/+$/, '');
+            }
+        }
+
+        return '/api';
+    };
 
     function detect() {
         if (
@@ -101,10 +122,16 @@ const TelegramAdapter = (() => {
             };
         }
 
+        const apiBaseUrl =
+            getApiBaseUrl();
+
+        const stateUrl =
+            `${apiBaseUrl}/state`;
+
         try {
             const response =
                 await fetch(
-                    '/state',
+                    stateUrl,
                     {
                         method: 'GET',
 
@@ -116,8 +143,17 @@ const TelegramAdapter = (() => {
                                 'application/json'
                         },
 
+                        /*
+                         * Для отдельного backend
+                         * авторизация выполняется через
+                         * Telegram initData header.
+                         *
+                         * Cookies backend здесь
+                         * не являются источником
+                         * идентификации пользователя.
+                         */
                         credentials:
-                            'same-origin'
+                            'omit'
                     }
                 );
 
@@ -155,14 +191,43 @@ const TelegramAdapter = (() => {
                 };
             }
 
+            /*
+             * Server API response:
+             *
+             * {
+             *     ok: true,
+             *     data: {
+             *         profile: {},
+             *         state: {}
+             *     }
+             * }
+             *
+             * Поддерживаем только серверный
+             * формат ответа.
+             */
+            const data =
+                payload.data;
+
+            if (
+                !data ||
+                typeof data !== 'object'
+            ) {
+                return {
+                    authenticated: false,
+                    profile: null,
+                    state: null,
+                    error: 'INVALID_SERVER_RESPONSE_DATA'
+                };
+            }
+
             return {
                 authenticated: true,
 
                 profile:
-                    payload.profile || null,
+                    data.profile || null,
 
                 state:
-                    payload.state || null,
+                    data.state || null,
 
                 error: null
             };
