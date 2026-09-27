@@ -34,6 +34,15 @@
             --system-bg: #111318;
             --system-text: #ffffff;
             --system-muted: #9ca3af;
+
+            /*
+             * Telegram сообщает реальную высоту
+             * через app.js.
+             *
+             * До получения значения используем
+             * обычную высоту viewport.
+             */
+            --tg-viewport-height: 100dvh;
         }
 
         * {
@@ -50,7 +59,9 @@
         }
 
         body {
-            min-height: 100dvh;
+            min-height: var(--tg-viewport-height);
+            height: var(--tg-viewport-height);
+
             overflow: hidden;
 
             background: var(--system-bg);
@@ -73,8 +84,14 @@
             position: relative;
 
             width: 100%;
-            height: 100dvh;
-            min-height: 100dvh;
+
+            /*
+             * Используем именно высоту,
+             * которую сообщает Telegram WebApp.
+             */
+            height: var(--tg-viewport-height);
+            min-height: var(--tg-viewport-height);
+            max-height: var(--tg-viewport-height);
 
             overflow: hidden;
         }
