@@ -8,6 +8,7 @@
  * - обнаружить Telegram WebApp;
  * - выполнить базовую инициализацию;
  * - предоставить безопасный доступ к API;
+ * - получить проверенный сервером профиль игрока;
  * - не смешивать Telegram-логику с игровой логикой.
  *
  * ВАЖНО:
@@ -77,11 +78,107 @@ const TelegramAdapter = (() => {
     }
 
     function getInitData() {
-        if (!webApp || typeof webApp.initData !== 'string') {
+        if (
+            !webApp ||
+            typeof webApp.initData !== 'string'
+        ) {
             return '';
         }
 
         return webApp.initData;
+    }
+
+    async function authenticate() {
+        const initData =
+            getInitData();
+
+        if (!initData) {
+            return {
+                authenticated: false,
+                profile: null,
+                state: null,
+                error: 'TELEGRAM_INIT_DATA_MISSING'
+            };
+        }
+
+        try {
+            const response =
+                await fetch(
+                    '/state',
+                    {
+                        method: 'GET',
+
+                        headers: {
+                            'x-telegram-init-data':
+                                initData,
+
+                            'Accept':
+                                'application/json'
+                        },
+
+                        credentials:
+                            'same-origin'
+                    }
+                );
+
+            let payload = null;
+
+            try {
+                payload =
+                    await response.json();
+            } catch {
+                payload = null;
+            }
+
+            if (!response.ok) {
+                return {
+                    authenticated: false,
+                    profile: null,
+                    state: null,
+                    error:
+                        payload &&
+                        typeof payload.error === 'string'
+                            ? payload.error
+                            : `HTTP_${response.status}`
+                };
+            }
+
+            if (
+                !payload ||
+                typeof payload !== 'object'
+            ) {
+                return {
+                    authenticated: false,
+                    profile: null,
+                    state: null,
+                    error: 'INVALID_SERVER_RESPONSE'
+                };
+            }
+
+            return {
+                authenticated: true,
+
+                profile:
+                    payload.profile || null,
+
+                state:
+                    payload.state || null,
+
+                error: null
+            };
+        } catch (error) {
+            console.error(
+                '[FREEzzzGames] Telegram authentication request failed:',
+                error
+            );
+
+            return {
+                authenticated: false,
+                profile: null,
+                state: null,
+                error: 'TELEGRAM_AUTH_REQUEST_FAILED'
+            };
+        }
     }
 
     function getVersion() {
@@ -170,8 +267,12 @@ const TelegramAdapter = (() => {
                     : {};
 
             callback({
-                height: getViewportHeight(),
-                stableHeight: getViewportStableHeight(),
+                height:
+                    getViewportHeight(),
+
+                stableHeight:
+                    getViewportStableHeight(),
+
                 isStateStable:
                     viewportEvent.isStateStable === true
             });
@@ -282,6 +383,7 @@ const TelegramAdapter = (() => {
         isInitialized,
         getWebApp,
         getInitData,
+        authenticate,
         getVersion,
         getPlatform,
         getColorScheme,
