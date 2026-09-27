@@ -12,7 +12,16 @@ const {
     canAfford
 } = require('./economy');
 
+const {
+    createTransaction,
+    isCredit,
+    isDebit
+} = require('./transactions');
+
 module.exports = {
     createEconomyState,
-    canAfford
+    canAfford,
+    createTransaction,
+    isCredit,
+    isDebit
 };
