@@ -652,11 +652,8 @@ class World {
          * сферическая проекция дополнительно
          * сжимается.
          *
-         * Это касается только горизонтальной
-         * геометрии объектов.
-         *
-         * На широких экранах исходный радиус
-         * полностью сохраняется.
+         * На широких экранах исходная геометрия
+         * сохраняется.
          */
         const radiusX =
             Math.max(
@@ -790,6 +787,59 @@ class World {
 
         element.style.scale =
             `${projection.scale}`;
+
+        /*
+         * Финальная страховка по фактическому экранному
+         * положению элемента.
+         *
+         * Важно:
+         * мы НЕ меняем мировые координаты,
+         * камеру или сферическую проекцию.
+         *
+         * Если после всех CSS-трансформаций объект
+         * частично вышел за viewport, корректируется
+         * только его финальное горизонтальное смещение.
+         */
+        const viewportRect =
+            this.viewport.getBoundingClientRect();
+
+        const objectRect =
+            element.getBoundingClientRect();
+
+        const horizontalPadding = 8;
+
+        const minLeft =
+            viewportRect.left +
+            horizontalPadding;
+
+        const maxRight =
+            viewportRect.right -
+            horizontalPadding;
+
+        let correctionX = 0;
+
+        if (
+            objectRect.left <
+            minLeft
+        ) {
+            correctionX =
+                minLeft -
+                objectRect.left;
+        } else if (
+            objectRect.right >
+            maxRight
+        ) {
+            correctionX =
+                maxRight -
+                objectRect.right;
+        }
+
+        if (
+            correctionX !== 0
+        ) {
+            element.style.translate =
+                `${projection.translateX + correctionX}px ${projection.translateY}px`;
+        }
     }    updateLocalization() {
         if (this.languageButton) {
             this.languageButton.textContent =
