@@ -35,8 +35,28 @@ jobs:
 
       - name: Check API health
         run: |
-          curl --fail --silent --show-error \
-            http://127.0.0.1:3000/api/health
+          response=$(curl --fail --silent --show-error \
+            http://127.0.0.1:3000/api/health)
+
+          echo "API response:"
+          echo "$response"
+
+          node -e '
+            const response = JSON.parse(process.argv[1]);
+
+            if (response.ok !== true) {
+                throw new Error("API response.ok is not true");
+            }
+
+            if (
+                !response.data ||
+                response.data.status !== "ok"
+            ) {
+                throw new Error("API health status is not ok");
+            }
+
+            console.log("API health response verified");
+          ' "$response"
 
       - name: Stop server
         if: always()
