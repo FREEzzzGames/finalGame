@@ -8,6 +8,10 @@
  * Authentication, authorization and persistence are handled separately.
  */
 
+const {
+    isAllowedMethod
+} = require('./methods');
+
 const createContext = ({
     request,
     body = {}
@@ -26,7 +30,7 @@ const createContext = ({
             ? request.url
             : null;
 
-    if (!method) {
+    if (!method || !isAllowedMethod(method)) {
         throw new Error('Invalid request method');
     }
 
