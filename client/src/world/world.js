@@ -25,6 +25,7 @@ import camera from './camera.js';
 import objects from './objects.js';
 import economy from '../economy/economy.js';
 import storage from '../app/storage.js';
+import i18n from '../i18n/i18n.js';
 
 const WORLD_WIDTH = 2400;
 const WORLD_HEIGHT = 3600;
@@ -130,6 +131,8 @@ class World {
         this.hud = null;
         this.balanceElement = null;
         this.hintElement = null;
+        this.languageButton = null;
+        this.unsubscribeLanguage = null;
 
         this.pointerActive = false;
         this.lastPointer = null;
@@ -173,7 +176,7 @@ class World {
         this.render();
 
         this.showHint(
-            '👆 Нажми на ферму'
+            i18n.t('hints.tapFarm')
         );
     }
 
@@ -262,10 +265,45 @@ class World {
         this.hintElement.className =
             'world-hint';
 
+        this.languageButton =
+            document.createElement('button');
+
+        this.languageButton.type =
+            'button';
+
+        this.languageButton.className =
+            'world-language-button';
+
+        /*
+         * HUD в текущем CSS не принимает
+         * pointer events. Кнопке языка
+         * разрешаем их отдельно.
+         */
+        this.languageButton.style.pointerEvents =
+            'auto';
+
+        this.languageButton.addEventListener(
+            'click',
+            event => {
+                event.stopPropagation();
+
+                i18n.nextLanguage();
+            }
+        );
+
         this.hud.append(
+            this.languageButton,
             this.balanceElement,
             this.hintElement
         );
+
+        this.unsubscribeLanguage =
+            i18n.subscribe(
+                () => {
+                    this.updateLocalization();
+                    this.render();
+                }
+            );
 
         this.viewport.appendChild(
             this.scene
@@ -296,8 +334,8 @@ class World {
 
         farm.innerHTML = `
             <span class="object-icon">🌾</span>
-            <span class="object-title">FARM</span>
-            <span class="object-level">LVL 0</span>
+            <span class="object-title"></span>
+            <span class="object-level"></span>
         `;
 
         farm.addEventListener(
@@ -349,7 +387,9 @@ class World {
                     </span>
 
                     <span class="locked-title">
-                        ${building.title}
+                        ${i18n.t(
+                            `buildings.${building.id}.title`
+                        )}
                     </span>
 
                     <span class="locked-price">
@@ -684,7 +724,8 @@ class World {
                 -1,
                 Math.min(
                     1,
-                    relativeX / radiusX                )
+                    relativeX / radiusX
+                )
             );
 
         const normalizedY =
@@ -713,9 +754,7 @@ class World {
             Math.atan(
                 relativeX /
                 radiusX
-            );
-
-        const angleY =
+            );        const angleY =
             Math.atan(
                 relativeY /
                 radiusY
@@ -811,6 +850,80 @@ class World {
             `${projection.scale}`;
     }
 
+    updateLocalization() {
+        if (this.languageButton) {
+            this.languageButton.textContent =
+                i18n.code.toUpperCase();
+
+            this.languageButton.setAttribute(
+                'aria-label',
+                i18n.t('system.language')
+            );
+        }
+
+        if (!this.scene) {
+            return;
+        }
+
+        const farm =
+            this.scene.querySelector(
+                '.world-farm'
+            );
+
+        if (farm) {
+            const title =
+                farm.querySelector(
+                    '.object-title'
+                );
+
+            const level =
+                farm.querySelector(
+                    '.object-level'
+                );
+
+            if (title) {
+                title.textContent =
+                    i18n.t(
+                        'buildings.farm.title'
+                    );
+            }
+
+            if (level) {
+                level.textContent =
+                    `${i18n.t(
+                        'buildings.farm.level'
+                    )} ${this.farmLevel}`;
+            }
+        }
+
+        Object.values(
+            BUILDINGS
+        ).forEach(
+            building => {
+                const element =
+                    this.scene.querySelector(
+                        `[data-object-id="${building.id}"]`
+                    );
+
+                if (!element) {
+                    return;
+                }
+
+                const title =
+                    element.querySelector(
+                        '.locked-title'
+                    );
+
+                if (title) {
+                    title.textContent =
+                        i18n.t(
+                            `buildings.${building.id}.title`
+                        );
+                }
+            }
+        );
+    }
+
     handleWorldTap(x, y) {
         const target =
             document.elementFromPoint(
@@ -837,7 +950,7 @@ class World {
         }
 
         this.showHint(
-            '👆 Нажми на объект'
+            i18n.t('hints.tapFarm')
         );
     }
 
@@ -895,7 +1008,9 @@ class World {
             this.saveState();
 
             this.showHint(
-                '🌾 Ферма построена'
+                i18n.t(
+                    'buildings.farm.built'
+                )
             );
 
             this.render();
@@ -934,7 +1049,9 @@ class World {
             this.buildings[id]
         ) {
             this.showHint(
-                `${building.icon} ${building.title}`
+                `${building.icon} ${i18n.t(
+                    `buildings.${id}.title`
+                )}`
             );
 
             return;
@@ -946,7 +1063,9 @@ class World {
             )
         ) {
             this.showHint(
-                `🔒 ${building.cost} 🪙`
+                `${i18n.t(
+                    'hints.insufficient'
+                )} ${building.cost} 🪙`
             );
 
             return;
@@ -976,7 +1095,9 @@ class World {
         this.saveState();
 
         this.showHint(
-            `${building.icon} ${building.title} построен`
+            `${building.icon} ${i18n.t(
+                `buildings.${id}.built`
+            )}`
         );
 
         if (
@@ -1232,7 +1353,9 @@ class World {
 
             if (levelElement) {
                 levelElement.textContent =
-                    `LVL ${this.farmLevel}`;
+                    `${i18n.t(
+                        'buildings.farm.level'
+                    )} ${this.farmLevel}`;
             }
 
             this.applySphereProjection(
@@ -1316,7 +1439,9 @@ class World {
                 if (priceElement) {
                     priceElement.textContent =
                         purchased
-                            ? 'BUILT'
+                            ? i18n.t(
+                                'hints.purchased'
+                            )
                             : `${building.cost} 🪙`;
                 }
 
@@ -1335,6 +1460,11 @@ class World {
     }
 
     destroy() {
+        if (this.unsubscribeLanguage) {
+            this.unsubscribeLanguage();
+            this.unsubscribeLanguage = null;
+        }
+
         clearTimeout(
             this.hintTimer
         );
