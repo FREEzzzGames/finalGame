@@ -43,6 +43,14 @@ const {
     isPreflightRequest
 } = require('./cors');
 
+const {
+    handlePreflight
+} = require('./preflight');
+
+const {
+    handleNotFound
+} = require('./not-found');
+
 module.exports = {
     MAX_BODY_SIZE,
     readJsonBody,
@@ -58,5 +66,7 @@ module.exports = {
     isAllowedMethod,
     CORS_ALLOWED_METHODS,
     applyCorsHeaders,
-    isPreflightRequest
+    isPreflightRequest,
+    handlePreflight,
+    handleNotFound
 };
