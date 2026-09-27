@@ -15,8 +15,7 @@
  * - локальное сохранение состояния;
  * - минимальный HUD.
  *
- * Серверная авторитетность будет подключена
- * отдельно.
+ * Серверная авторитетность будет подключена отдельно.
  */
 
 import gestures from './gestures.js';
@@ -738,20 +737,14 @@ class World {
             `${building.icon} ${building.title} построен`
         );
 
+        this.startPassiveIncome();
+
         this.render();
     }
 
     /*
      * WORKSHOP:
-     *
      * Первый пассивный доход.
-     *
-     * Пока экономика клиентская,
-     * расчёт выполняется локально.
-     *
-     * После подключения сервера
-     * этот расчёт будет перенесён
-     * на серверную авторитетную модель.
      */
     applyPassiveIncome() {
         if (
@@ -806,8 +799,9 @@ class World {
         }
 
         /*
-         * Ограничиваем офлайн-начисление
-         * 24 часами в текущей клиентской версии.
+         * Максимум 24 часа
+         * офлайн-дохода в текущей
+         * клиентской версии.
          */
         const safeCycles =
             Math.min(
@@ -869,6 +863,46 @@ class World {
             rect.width,
             rect.height
         );
+    }
+
+    updateBalance() {
+        if (!this.balanceElement) {
+            return;
+        }
+
+        this.balanceElement.textContent =
+            `🪙 ${economy.getBalance()}`;
+    }
+
+    showHint(message) {
+        if (!this.hintElement) {
+            return;
+        }
+
+        clearTimeout(
+            this.hintTimer
+        );
+
+        this.hintElement.textContent =
+            message;
+
+        this.hintElement.classList.add(
+            'is-visible'
+        );
+
+        this.hintTimer =
+            setTimeout(
+                () => {
+                    if (!this.hintElement) {
+                        return;
+                    }
+
+                    this.hintElement.classList.remove(
+                        'is-visible'
+                    );
+                },
+                1800
+            );
     }
 
     render() {
@@ -940,27 +974,4 @@ class World {
                     return;
                 }
 
-                const purchased =
-                    this.buildings[
-                        building.id
-                    ];
-
-                const affordable =
-                    economy.canAfford(
-                        building.cost
-                    );
-
-                element.classList.toggle(
-                    'is-purchased',
-                    purchased
-                );
-
-                element.classList.toggle(
-                    'is-affordable',
-                    !purchased &&
-                    affordable
-                );
-
-                element.classList.toggle(
-                    'is-locked',
-                    !purc
+       
