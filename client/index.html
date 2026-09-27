@@ -23,6 +23,12 @@
     <!-- Telegram Mini App API -->
     <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
 
+    <!-- Main World styles -->
+    <link
+        rel="stylesheet"
+        href="./src/ui/styles/world.css"
+    >
+
     <style>
         :root {
             --system-bg: #111318;
@@ -73,12 +79,6 @@
             overflow: hidden;
         }
 
-        /*
-         * Базовый контейнер приложения.
-         *
-         * Игровой мир, HUD и остальные системы
-         * будут подключаться сюда отдельными модулями.
-         */
         .app-root {
             position: relative;
 
@@ -88,9 +88,6 @@
             overflow: hidden;
         }
 
-        /*
-         * Безопасная зона Telegram / современных телефонов.
-         */
         .safe-area {
             position: absolute;
 
@@ -103,11 +100,6 @@
             pointer-events: none;
         }
 
-        /*
-         * Начальное состояние.
-         * Это НЕ финальный игровой экран.
-         * Он нужен только для проверки запуска фундамента.
-         */
         .boot-screen {
             position: absolute;
 
@@ -146,10 +138,6 @@
             line-height: 1.4;
         }
 
-        /*
-         * На очень высоких экранах сохраняем нормальную
-         * вертикальную композицию.
-         */
         @media (min-aspect-ratio: 1/1) {
             body {
                 background: #0b0d10;
@@ -194,11 +182,7 @@
         </div>
     </main>
 
-    <!--
-        Главный модуль приложения.
-        Пока файла app.js нет — подключение подготовлено
-        для следующего шага архитектуры.
-    -->
+    <!-- Главный модуль приложения -->
     <script
         type="module"
         src="./src/app/app.js"
