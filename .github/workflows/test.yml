@@ -21,8 +21,30 @@ jobs:
         with:
           node-version: 20
 
-      - name: Check server modules
+      - name: Check server syntax
         run: node --check server/src/server.js
 
       - name: Run tests
         run: npm test
+
+      - name: Start server
+        run: |
+          node server/src/server.js > server.log 2>&1 &
+          echo $! > server.pid
+          sleep 2
+
+      - name: Check API health
+        run: |
+          curl --fail --silent --show-error \
+            http://127.0.0.1:3000/api/health
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill "$(cat server.pid)" || true
+          fi
+
+      - name: Show server log on failure
+        if: failure()
+        run: cat server.log
