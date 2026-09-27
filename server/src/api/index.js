@@ -87,6 +87,16 @@ const {
     executeApiPipeline
 } = require('./pipeline');
 
+const {
+    createHttpResult,
+    createHttpSuccess,
+    createHttpError
+} = require('./http-result');
+
+const {
+    executeHttpPipeline
+} = require('./http-pipeline');
+
 module.exports = {
     MAX_BODY_SIZE,
     readJsonBody,
@@ -116,5 +126,9 @@ module.exports = {
     createNotFoundResult,
     createSuccessResult,
     validateContext,
-    executeApiPipeline
+    executeApiPipeline,
+    createHttpResult,
+    createHttpSuccess,
+    createHttpError,
+    executeHttpPipeline
 };
