@@ -45,7 +45,7 @@ const {
 
 const {
     handlePreflight
-} = require('./preflight);
+} = require('./preflight');
 
 const {
     handleNotFound
