@@ -11,6 +11,7 @@
  * - tap по объекту;
  * - получение монет;
  * - развитие первого объекта;
+ * - локальное сохранение состояния;
  * - минимальный HUD.
  *
  * Серверная авторитетность будет подключена
@@ -22,6 +23,7 @@ import gestures from './gestures.js';
 import camera from './camera.js';
 import objects from './objects.js';
 import economy from '../economy/economy.js';
+import storage from '../app/storage.js';
 
 const WORLD_WIDTH = 2400;
 const WORLD_HEIGHT = 3600;
@@ -57,6 +59,8 @@ class World {
     }
 
     init() {
+        this.loadSavedState();
+
         this.createStructure();
         this.createObjects();
         this.bindEvents();
@@ -77,6 +81,28 @@ class World {
         this.showHint(
             '👆 Нажми на ферму'
         );
+    }
+
+    loadSavedState() {
+        const state =
+            storage.loadState();
+
+        economy.setBalance(
+            state.balance
+        );
+
+        this.farmLevel =
+            state.farmLevel;
+    }
+
+    saveState() {
+        storage.saveState({
+            balance:
+                economy.getBalance(),
+
+            farmLevel:
+                this.farmLevel
+        });
     }
 
     createStructure() {
@@ -169,7 +195,8 @@ class World {
             y: WORLD_HEIGHT / 2,
             layer: 'buildings',
             data: {
-                level: 0
+                level:
+                    this.farmLevel
             }
         });
     }
@@ -418,6 +445,8 @@ class World {
                     COIN_REWARD
                 );
 
+                this.saveState();
+
                 this.showHint(
                     '🪙 +1'
                 );
@@ -442,6 +471,8 @@ class World {
                 }
             );
 
+            this.saveState();
+
             this.showHint(
                 '🌾 Ферма построена'
             );
@@ -458,6 +489,8 @@ class World {
         economy.add(
             reward
         );
+
+        this.saveState();
 
         this.showHint(
             `🪙 +${reward}`
