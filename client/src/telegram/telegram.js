@@ -90,7 +90,22 @@ const TelegramAdapter = (() => {
     }
 
     function isAvailable() {
-        return webApp !== null || detect();
+        /*
+         * Telegram WebApp JavaScript API может быть загружен
+         * и в обычном браузере, потому что telegram-web-app.js
+         * подключён глобально в index.html.
+         *
+         * Поэтому самого наличия window.Telegram.WebApp
+         * недостаточно для определения реального Telegram runtime.
+         *
+         * Для авторизации считаем Telegram доступным только
+         * если Telegram передал непустой initData.
+         */
+        if (!webApp && !detect()) {
+            return false;
+        }
+
+        return getInitData().length > 0;
     }
 
     function isInitialized() {
