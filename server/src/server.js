@@ -4,12 +4,16 @@
  * FREEzzzGames
  * Server entry point
  *
- * Provides the minimal HTTP server foundation.
- * Authentication, game state, economy, market and
- * realtime modules are handled separately.
+ * Connects the HTTP server to the API foundation.
+ * Authentication, game state, economy and realtime
+ * modules remain separate.
  */
 
 const http = require('http');
+
+const {
+    handleApi
+} = require('./api');
 
 const DEFAULT_HOST = '0.0.0.0';
 const DEFAULT_PORT = 3000;
@@ -24,27 +28,52 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error('Invalid server port');
 }
 
-const server = http.createServer((request, response) => {
+const server = http.createServer(async (request, response) => {
     response.setHeader(
         'Content-Type',
         'application/json; charset=utf-8'
     );
 
-    if (request.method === 'GET' && request.url === '/health') {
-        response.statusCode = 200;
+    try {
+        const handledByApi = await handleApi(
+            request,
+            response
+        );
+
+        if (handledByApi) {
+            return;
+        }
+
+        if (
+            request.method === 'GET' &&
+            request.url === '/health'
+        ) {
+            response.statusCode = 200;
+
+            response.end(JSON.stringify({
+                status: 'ok'
+            }));
+
+            return;
+        }
+
+        response.statusCode = 404;
 
         response.end(JSON.stringify({
-            status: 'ok'
+            error: 'Not Found'
         }));
+    } catch (error) {
+        if (response.headersSent) {
+            response.end();
+            return;
+        }
 
-        return;
+        response.statusCode = 500;
+
+        response.end(JSON.stringify({
+            error: 'Internal Server Error'
+        }));
     }
-
-    response.statusCode = 404;
-
-    response.end(JSON.stringify({
-        error: 'Not Found'
-    }));
 });
 
 const start = () => new Promise((resolve, reject) => {
