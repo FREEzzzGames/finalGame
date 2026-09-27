@@ -4,15 +4,12 @@
  * FREEzzzGames
  * API health module
  *
- * Provides a minimal health-check handler.
- * No authentication, persistence or game state is involved.
+ * Provides a minimal health response for server/API checks.
  */
 
-const getHealth = () => {
-    return {
-        status: 'ok'
-    };
-};
+const getHealth = () => ({
+    status: 'ok'
+});
 
 module.exports = {
     getHealth
