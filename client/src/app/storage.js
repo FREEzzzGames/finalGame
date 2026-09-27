@@ -18,7 +18,16 @@ const STORAGE_KEY =
 
 const DEFAULT_STATE = {
     balance: 0,
-    farmLevel: 0
+    farmLevel: 0,
+
+    buildings: {
+        workshop: false,
+        stadium: false,
+        studio: false,
+        shopping: false
+    },
+
+    lastSavedAt: 0
 };
 
 function getStorage() {
@@ -49,15 +58,42 @@ function normalizeInteger(value, fallback) {
     return value;
 }
 
+function normalizeTimestamp(value) {
+    if (
+        typeof value !== 'number' ||
+        !Number.isFinite(value) ||
+        value < 0
+    ) {
+        return 0;
+    }
+
+    return Math.floor(value);
+}
+
+function normalizeBoolean(value, fallback) {
+    return typeof value === 'boolean'
+        ? value
+        : fallback;
+}
+
 function normalizeState(value) {
     if (
         !value ||
         typeof value !== 'object'
     ) {
         return {
-            ...DEFAULT_STATE
+            ...DEFAULT_STATE,
+            buildings: {
+                ...DEFAULT_STATE.buildings
+            }
         };
     }
+
+    const sourceBuildings =
+        value.buildings &&
+        typeof value.buildings === 'object'
+            ? value.buildings
+            : {};
 
     return {
         balance: normalizeInteger(
@@ -68,6 +104,32 @@ function normalizeState(value) {
         farmLevel: normalizeInteger(
             value.farmLevel,
             DEFAULT_STATE.farmLevel
+        ),
+
+        buildings: {
+            workshop: normalizeBoolean(
+                sourceBuildings.workshop,
+                DEFAULT_STATE.buildings.workshop
+            ),
+
+            stadium: normalizeBoolean(
+                sourceBuildings.stadium,
+                DEFAULT_STATE.buildings.stadium
+            ),
+
+            studio: normalizeBoolean(
+                sourceBuildings.studio,
+                DEFAULT_STATE.buildings.studio
+            ),
+
+            shopping: normalizeBoolean(
+                sourceBuildings.shopping,
+                DEFAULT_STATE.buildings.shopping
+            )
+        },
+
+        lastSavedAt: normalizeTimestamp(
+            value.lastSavedAt,
         )
     };
 }
@@ -77,9 +139,9 @@ function loadState() {
         getStorage();
 
     if (!storage) {
-        return {
-            ...DEFAULT_STATE
-        };
+        return normalizeState(
+            DEFAULT_STATE
+        );
     }
 
     try {
@@ -89,9 +151,9 @@ function loadState() {
             );
 
         if (!raw) {
-            return {
-                ...DEFAULT_STATE
-            };
+            return normalizeState(
+                DEFAULT_STATE
+            );
         }
 
         const parsed =
@@ -106,9 +168,9 @@ function loadState() {
             error
         );
 
-        return {
-            ...DEFAULT_STATE
-        };
+        return normalizeState(
+            DEFAULT_STATE
+        );
     }
 }
 
@@ -121,7 +183,10 @@ function saveState(state) {
     }
 
     const normalized =
-        normalizeState(state);
+        normalizeState({
+            ...state,
+            lastSavedAt: Date.now()
+        });
 
     try {
         storage.setItem(
