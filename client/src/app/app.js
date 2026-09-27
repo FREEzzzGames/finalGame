@@ -4,63 +4,92 @@
  * FREEzzzGames
  * Application bootstrap
  *
- * Ответственность этого модуля:
- * - запустить клиентское приложение;
- * - подготовить базовый контейнер;
- * - проверить доступность Telegram WebApp;
- * - передать управление следующим модулям.
+ * Ответственность:
+ * - запустить приложение;
+ * - инициализировать Telegram;
+ * - создать Main World;
+ * - передать управление игровому модулю.
  *
- * ВАЖНО:
- * Этот модуль пока НЕ содержит игровую логику.
+ * Игровая логика находится в world/world.js.
  */
 
-const APP_VERSION = '0.1.0';
+import TelegramAdapter from '../telegram/telegram.js';
+import World from '../world/world.js';
 
-const appRoot = document.querySelector('#app');
-const bootScreen = document.querySelector('#boot-screen');
-const bootStatus = document.querySelector('#boot-status');
+const APP_VERSION = '0.2.0';
 
-function getTelegramWebApp() {
-    if (
-        typeof window !== 'undefined' &&
-        window.Telegram &&
-        window.Telegram.WebApp
-    ) {
-        return window.Telegram.WebApp;
-    }
+const appRoot =
+    document.querySelector('#app');
 
-    return null;
-}
+const bootScreen =
+    document.querySelector('#boot-screen');
 
-function initializeTelegram() {
-    const telegram = getTelegramWebApp();
+const bootStatus =
+    document.querySelector('#boot-status');
 
-    if (!telegram) {
-        return null;
-    }
-
-    try {
-        telegram.ready();
-
-        if (typeof telegram.expand === 'function') {
-            telegram.expand();
-        }
-    } catch (error) {
-        console.warn(
-            '[FREEzzzGames] Telegram initialization warning:',
-            error
-        );
-    }
-
-    return telegram;
-}
+let world = null;
 
 function updateBootStatus(message) {
     if (!bootStatus) {
         return;
     }
 
-    bootStatus.textContent = message;
+    bootStatus.textContent =
+        message;
+}
+
+function initializeTelegram() {
+    try {
+        return TelegramAdapter.init();
+    } catch (error) {
+        console.warn(
+            '[FREEzzzGames] Telegram initialization warning:',
+            error
+        );
+
+        return null;
+    }
+}
+
+function createWorldMount() {
+    if (!appRoot) {
+        throw new Error(
+            '[FREEzzzGames] Application root #app was not found.'
+        );
+    }
+
+    const mount =
+        document.createElement('div');
+
+    mount.id =
+        'world-mount';
+
+    mount.className =
+        'world-mount';
+
+    appRoot.appendChild(
+        mount
+    );
+
+    return mount;
+}
+
+function startWorld() {
+    const mount =
+        createWorldMount();
+
+    world =
+        new World(mount);
+
+    return world;
+}
+
+function hideBootScreen() {
+    if (!bootScreen) {
+        return;
+    }
+
+    bootScreen.remove();
 }
 
 function startApp() {
@@ -70,12 +99,17 @@ function startApp() {
         );
     }
 
-    const telegram = initializeTelegram();
+    const telegram =
+        initializeTelegram();
 
     if (telegram) {
-        updateBootStatus('FREEzzzGames');
+        updateBootStatus(
+            'FREEzzzGames'
+        );
     } else {
-        updateBootStatus('FREEzzzGames');
+        updateBootStatus(
+            'FREEzzzGames'
+        );
 
         console.info(
             '[FREEzzzGames] Telegram WebApp API is not available. ' +
@@ -83,8 +117,15 @@ function startApp() {
         );
     }
 
-    appRoot.dataset.appVersion = APP_VERSION;
-    appRoot.dataset.initialized = 'true';
+    appRoot.dataset.appVersion =
+        APP_VERSION;
+
+    appRoot.dataset.initialized =
+        'true';
+
+    startWorld();
+
+    hideBootScreen();
 
     console.info(
         `[FREEzzzGames] App initialized. Version: ${APP_VERSION}`
@@ -99,5 +140,15 @@ try {
         error
     );
 
-    updateBootStatus('FREEzzzGames');
+    updateBootStatus(
+        'FREEzzzGames'
+    );
 }
+
+export {
+    startApp
+};
+
+export {
+    world
+};
