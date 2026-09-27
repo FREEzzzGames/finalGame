@@ -41,16 +41,25 @@ const createTelegramInitData = ({
         .join('\n');
 
     const secretKey = crypto
-        .createHmac('sha256', 'WebAppData')
+        .createHmac(
+            'sha256',
+            'WebAppData'
+        )
         .update(botToken)
         .digest();
 
     const hash = crypto
-        .createHmac('sha256', secretKey)
+        .createHmac(
+            'sha256',
+            secretKey
+        )
         .update(dataCheckString)
         .digest('hex');
 
-    params.set('hash', hash);
+    params.set(
+        'hash',
+        hash
+    );
 
     return params.toString();
 };
@@ -92,12 +101,43 @@ test('authenticateRequest rejects invalid Telegram signature', () => {
                 botToken: TEST_BOT_TOKEN
             });
 
-        const tampered =
-            `${initData.slice(0, -1)}0`;
+        const params =
+            new URLSearchParams(initData);
+
+        const originalHash =
+            params.get('hash');
+
+        assert.equal(
+            typeof originalHash,
+            'string'
+        );
+
+        assert.equal(
+            originalHash.length,
+            64
+        );
+
+        /*
+         * Change the first hexadecimal character
+         * to a guaranteed different value.
+         *
+         * This avoids the previous flaky behaviour
+         * where replacing the last character with "0"
+         * sometimes produced the exact same hash.
+         */
+        const replacement =
+            originalHash[0] === '0'
+                ? '1'
+                : '0';
+
+        params.set(
+            'hash',
+            `${replacement}${originalHash.slice(1)}`
+        );
 
         const result = authenticateRequest({
             headers: {
-                [AUTH_HEADER]: tampered
+                [AUTH_HEADER]: params.toString()
             }
         });
 
