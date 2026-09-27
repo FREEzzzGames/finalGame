@@ -59,6 +59,16 @@ const {
     handleResult
 } = require('./handle');
 
+const {
+    API_PREFIX,
+    isApiPath,
+    normalizeApiPath
+} = require('./path');
+
+const {
+    parseRequestUrl
+} = require('./url');
+
 module.exports = {
     MAX_BODY_SIZE,
     readJsonBody,
@@ -78,5 +88,9 @@ module.exports = {
     handlePreflight,
     handleNotFound,
     handleApiError,
-    handleResult
+    handleResult,
+    API_PREFIX,
+    isApiPath,
+    normalizeApiPath,
+    parseRequestUrl
 };
