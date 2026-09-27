@@ -135,6 +135,12 @@ const {
     hasHeader
 } = require('./headers');
 
+const {
+    registerDefaultRoutes
+} = require('./routes');
+
+registerDefaultRoutes();
+
 module.exports = {
     MAX_BODY_SIZE,
     readJsonBody,
@@ -182,5 +188,6 @@ module.exports = {
     isMethod,
     normalizeHeaderName,
     getHeader,
-    hasHeader
+    hasHeader,
+    registerDefaultRoutes
 };
