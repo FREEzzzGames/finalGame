@@ -8,8 +8,13 @@
  * the initial server-authoritative game state.
  *
  * Persistent storage is intentionally not connected yet.
- * This module is the first API bridge between authentication
- * and the game-state model.
+ *
+ * This module is the API bridge between:
+ * Telegram authentication
+ *        ↓
+ * authenticated user profile
+ *        ↓
+ * game state
  */
 
 const {
@@ -19,6 +24,10 @@ const {
 const {
     createGameState
 } = require('./game-state');
+
+const {
+    createProfile
+} = require('./profile');
 
 const parseTelegramUser = userJson => {
     if (
@@ -90,15 +99,49 @@ const getState = context => {
         };
     }
 
-    const gameState = createGameState({
-        userId: String(telegramUser.id)
-    });
+    const profile =
+        createProfile({
+            telegramUserId:
+                telegramUser.id,
+
+            username:
+                telegramUser.username,
+
+            firstName:
+                telegramUser.first_name,
+
+            lastName:
+                telegramUser.last_name
+        });
+
+    const gameState =
+        createGameState({
+            userId:
+                String(telegramUser.id)
+        });
 
     return {
         statusCode: 200,
+
         data: {
+            profile: {
+                telegramUserId:
+                    profile.telegramUserId,
+
+                username:
+                    profile.username,
+
+                firstName:
+                    profile.firstName,
+
+                lastName:
+                    profile.lastName
+            },
+
             state: {
-                version: gameState.version,
+                version:
+                    gameState.version,
+
                 economy: {
                     balance:
                         gameState.economy.balance
