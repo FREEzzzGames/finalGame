@@ -16,6 +16,10 @@ const {
     handleApiRequest
 } = require('./request-handler');
 
+const {
+    handlePreflight
+} = require('./preflight');
+
 const handleApi = async (
     request,
     response
@@ -24,6 +28,22 @@ const handleApi = async (
 
     if (apiPath === null) {
         return false;
+    }
+
+    /*
+     * CORS preflight must be handled before
+     * normal API routing.
+     *
+     * This is required for Telegram WebApp requests
+     * that send the x-telegram-init-data header.
+     */
+    if (
+        handlePreflight(
+            request,
+            response
+        )
+    ) {
+        return true;
     }
 
     const originalUrl = request.url;
