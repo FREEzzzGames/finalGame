@@ -121,8 +121,9 @@ const TelegramAdapter = (() => {
             return null;
         }
 
-        const height =
-            Number(webApp.viewportHeight);
+        const height = Number(
+            webApp.viewportHeight
+        );
 
         return Number.isFinite(height) && height > 0
             ? height
@@ -134,8 +135,9 @@ const TelegramAdapter = (() => {
             return null;
         }
 
-        const height =
-            Number(webApp.viewportStableHeight);
+        const height = Number(
+            webApp.viewportStableHeight
+        );
 
         return Number.isFinite(height) && height > 0
             ? height
@@ -151,12 +153,27 @@ const TelegramAdapter = (() => {
             return () => {};
         }
 
-        const handler = () => {
+        /*
+         * Telegram передаёт объект события:
+         *
+         * {
+         *     isStateStable: boolean
+         * }
+         *
+         * Не читаем isStateStable из webApp —
+         * это не значение события.
+         */
+        const handler = (event) => {
+            const viewportEvent =
+                event && typeof event === 'object'
+                    ? event
+                    : {};
+
             callback({
                 height: getViewportHeight(),
                 stableHeight: getViewportStableHeight(),
                 isStateStable:
-                    webApp.isStateStable === true
+                    viewportEvent.isStateStable === true
             });
         };
 
@@ -203,6 +220,7 @@ const TelegramAdapter = (() => {
 
         try {
             webApp.setHeaderColor(color);
+
             return true;
         } catch (error) {
             console.warn(
@@ -224,6 +242,7 @@ const TelegramAdapter = (() => {
 
         try {
             webApp.setBackgroundColor(color);
+
             return true;
         } catch (error) {
             console.warn(
@@ -245,6 +264,7 @@ const TelegramAdapter = (() => {
 
         try {
             webApp.close();
+
             return true;
         } catch (error) {
             console.warn(
