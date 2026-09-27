@@ -79,6 +79,14 @@ const {
     createSuccessResult
 } = require('./route-result');
 
+const {
+    validateContext
+} = require('./validate-context');
+
+const {
+    executeApiPipeline
+} = require('./pipeline');
+
 module.exports = {
     MAX_BODY_SIZE,
     readJsonBody,
@@ -106,5 +114,7 @@ module.exports = {
     getApiRequestPath,
     createRouteResult,
     createNotFoundResult,
-    createSuccessResult
+    createSuccessResult,
+    validateContext,
+    executeApiPipeline
 };
