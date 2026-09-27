@@ -55,8 +55,7 @@
 
             align-items: center;
 
-            padding:
-                24px;
+            padding: 24px;
 
             gap: 20px;
         }
@@ -199,11 +198,6 @@
             text-align: center;
         }
 
-        /*
-         * Chat panel должен оставаться поверх
-         * тестовой страницы.
-         */
-
         #chat-mount {
             position: static;
         }
@@ -250,14 +244,6 @@
             class="chat-test-controls"
             aria-label="Chat test controls"
         >
-
-            <button
-                type="button"
-                class="chat-test-button"
-                data-action="open"
-            >
-                Открыть Chat
-            </button>
 
             <button
                 type="button"
@@ -342,7 +328,7 @@
 
         /*
          * ----------------------------------------
-         * Test data
+         * Test rooms
          * ----------------------------------------
          */
 
@@ -356,6 +342,12 @@
             'Geek'
         );
 
+
+        /*
+         * ----------------------------------------
+         * Test avatars
+         * ----------------------------------------
+         */
 
         avatars.add(
             'pixel',
@@ -475,13 +467,16 @@
 
 
         /*
-         * Start on Global room.
+         * ----------------------------------------
+         * Start on Global
+         * ----------------------------------------
          */
 
         chatUI.setRoom(
             'global'
         );
 
+        chatUI.open();
 
         status.textContent =
             'Chat cluster работает. Текущая комната: Global';
@@ -489,31 +484,9 @@
 
         /*
          * ----------------------------------------
-         * Controls
+         * Room controls
          * ----------------------------------------
          */
-
-        document
-            .querySelector(
-                '[data-action="open"]'
-            )
-            .addEventListener(
-                'click',
-                () => {
-
-                    chatUI.open();
-
-                    status.textContent =
-                        'Chat открыт. Комната: ' +
-                        (
-                            rooms.get(
-                                chat.getRoom()
-                            )?.name ||
-                            chat.getRoom()
-                        );
-                }
-            );
-
 
         document
             .querySelectorAll(
@@ -560,6 +533,12 @@
             );
 
 
+        /*
+         * ----------------------------------------
+         * Locale controls
+         * ----------------------------------------
+         */
+
         document
             .querySelectorAll(
                 '[data-locale]'
@@ -588,10 +567,9 @@
 
 
         /*
-         * Debug access.
-         *
-         * Не используется основным приложением.
-         * Удобно для проверки в DevTools.
+         * ----------------------------------------
+         * DevTools access
+         * ----------------------------------------
          */
 
         window.__FREEZZ_CHAT_TEST__ = {
