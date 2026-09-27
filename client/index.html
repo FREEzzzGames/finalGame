@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
+
+    <meta
+        name="theme-color"
+        content="#111318"
+    >
+
+    <meta
+        name="description"
+        content="FREEzzzGames — Telegram Mini App"
+    >
+
+    <title>FREEzzzGames</title>
+
+    <!-- Telegram Mini App API -->
+    <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
+
+    <style>
+        :root {
+            --system-bg: #111318;
+            --system-text: #ffffff;
+            --system-muted: #9ca3af;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100dvh;
+            overflow: hidden;
+
+            background: var(--system-bg);
+            color: var(--system-text);
+
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            user-select: none;
+            -webkit-user-select: none;
+
+            touch-action: manipulation;
+        }
+
+        #app {
+            position: relative;
+
+            width: 100%;
+            height: 100dvh;
+            min-height: 100dvh;
+
+            overflow: hidden;
+        }
+
+        /*
+         * Базовый контейнер приложения.
+         *
+         * Игровой мир, HUD и остальные системы
+         * будут подключаться сюда отдельными модулями.
+         */
+        .app-root {
+            position: relative;
+
+            width: 100%;
+            height: 100%;
+
+            overflow: hidden;
+        }
+
+        /*
+         * Безопасная зона Telegram / современных телефонов.
+         */
+        .safe-area {
+            position: absolute;
+
+            inset:
+                env(safe-area-inset-top)
+                env(safe-area-inset-right)
+                env(safe-area-inset-bottom)
+                env(safe-area-inset-left);
+
+            pointer-events: none;
+        }
+
+        /*
+         * Начальное состояние.
+         * Это НЕ финальный игровой экран.
+         * Он нужен только для проверки запуска фундамента.
+         */
+        .boot-screen {
+            position: absolute;
+
+            inset: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 24px;
+
+            text-align: center;
+
+            background: var(--system-bg);
+        }
+
+        .boot-content {
+            max-width: 320px;
+        }
+
+        .boot-title {
+            margin: 0;
+
+            font-size: 28px;
+            line-height: 1.1;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .boot-status {
+            margin: 10px 0 0;
+
+            color: var(--system-muted);
+
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        /*
+         * На очень высоких экранах сохраняем нормальную
+         * вертикальную композицию.
+         */
+        @media (min-aspect-ratio: 1/1) {
+            body {
+                background: #0b0d10;
+            }
+
+            #app {
+                max-width: 600px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main id="app">
+        <div class="app-root">
+
+            <section
+                class="boot-screen"
+                id="boot-screen"
+                aria-label="FREEzzzGames"
+            >
+                <div class="boot-content">
+                    <h1 class="boot-title">
+                        FREEzzzGames
+                    </h1>
+
+                    <p
+                        class="boot-status"
+                        id="boot-status"
+                    >
+                        Loading…
+                    </p>
+                </div>
+            </section>
+
+            <div
+                class="safe-area"
+                aria-hidden="true"
+            ></div>
+
+        </div>
+    </main>
+
+    <!--
+        Главный модуль приложения.
+        Пока файла app.js нет — подключение подготовлено
+        для следующего шага архитектуры.
+    -->
+    <script
+        type="module"
+        src="./src/app/app.js"
+    ></script>
+</body>
+</html>
