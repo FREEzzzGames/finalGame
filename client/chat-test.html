@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>FREEzzzGames — GEEK CHAT TEST</title>
+
+    <link
+        rel="stylesheet"
+        href="./src/ui/styles/chat.css"
+    >
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+        }
+
+        body {
+            min-height: 100vh;
+
+            background:
+                radial-gradient(
+                    circle at 50% 20%,
+                    #202638 0%,
+                    #0d1018 45%,
+                    #07090e 100%
+                );
+
+            color: #ffffff;
+
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+        }
+
+        .chat-test-page {
+            min-height: 100vh;
+
+            display: flex;
+            flex-direction: column;
+
+            align-items: center;
+
+            padding:
+                24px;
+
+            gap: 20px;
+        }
+
+        .chat-test-header {
+            width: min(
+                100%,
+                720px
+            );
+
+            text-align: center;
+        }
+
+        .chat-test-title {
+            margin: 0;
+
+            font-size: 24px;
+
+            font-weight: 800;
+
+            letter-spacing:
+                0.08em;
+        }
+
+        .chat-test-subtitle {
+            margin-top: 8px;
+
+            color:
+                rgba(255, 255, 255, 0.52);
+
+            font-size: 13px;
+        }
+
+        .chat-test-controls {
+            width: min(
+                100%,
+                720px
+            );
+
+            display: flex;
+
+            flex-wrap: wrap;
+
+            justify-content: center;
+
+            gap: 8px;
+
+            padding: 14px;
+
+            border:
+                1px solid
+                rgba(255, 255, 255, 0.10);
+
+            border-radius: 14px;
+
+            background:
+                rgba(255, 255, 255, 0.045);
+        }
+
+        .chat-test-button {
+            min-height: 40px;
+
+            padding:
+                0
+                13px;
+
+            border:
+                1px solid
+                rgba(255, 255, 255, 0.13);
+
+            border-radius: 10px;
+
+            background:
+                rgba(255, 255, 255, 0.07);
+
+            color: #ffffff;
+
+            font: inherit;
+
+            font-size: 13px;
+
+            font-weight: 650;
+
+            cursor: pointer;
+        }
+
+        .chat-test-button:hover {
+            background:
+                rgba(255, 255, 255, 0.13);
+        }
+
+        .chat-test-status {
+            width: min(
+                100%,
+                720px
+            );
+
+            min-height: 42px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding:
+                8px
+                12px;
+
+            border:
+                1px solid
+                rgba(255, 255, 255, 0.08);
+
+            border-radius: 10px;
+
+            color:
+                rgba(255, 255, 255, 0.62);
+
+            background:
+                rgba(255, 255, 255, 0.035);
+
+            font-size: 12px;
+
+            text-align: center;
+        }
+
+        .chat-test-note {
+            width: min(
+                100%,
+                720px
+            );
+
+            color:
+                rgba(255, 255, 255, 0.38);
+
+            font-size: 11px;
+
+            line-height: 1.5;
+
+            text-align: center;
+        }
+
+        /*
+         * Chat panel должен оставаться поверх
+         * тестовой страницы.
+         */
+
+        #chat-mount {
+            position: static;
+        }
+
+        @media (max-width: 600px) {
+            .chat-test-page {
+                padding: 14px;
+            }
+
+            .chat-test-title {
+                font-size: 19px;
+            }
+
+            .chat-test-controls {
+                padding: 10px;
+            }
+
+            .chat-test-button {
+                flex:
+                    1 1 calc(50% - 8px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="chat-test-page">
+
+        <header class="chat-test-header">
+
+            <h1 class="chat-test-title">
+                GEEK CHAT
+            </h1>
+
+            <div class="chat-test-subtitle">
+                FREEzzzGames — standalone Chat cluster test
+            </div>
+
+        </header>
+
+
+        <section
+            class="chat-test-controls"
+            aria-label="Chat test controls"
+        >
+
+            <button
+                type="button"
+                class="chat-test-button"
+                data-action="open"
+            >
+                Открыть Chat
+            </button>
+
+            <button
+                type="button"
+                class="chat-test-button"
+                data-room="global"
+            >
+                Global
+            </button>
+
+            <button
+                type="button"
+                class="chat-test-button"
+                data-room="gaming"
+            >
+                Gaming
+            </button>
+
+            <button
+                type="button"
+                class="chat-test-button"
+                data-room="geek"
+            >
+                Geek
+            </button>
+
+            <button
+                type="button"
+                class="chat-test-button"
+                data-locale="ru"
+            >
+                RU
+            </button>
+
+            <button
+                type="button"
+                class="chat-test-button"
+                data-locale="de"
+            >
+                DE
+            </button>
+
+            <button
+                type="button"
+                class="chat-test-button"
+                data-locale="en"
+            >
+                EN
+            </button>
+
+        </section>
+
+
+        <div
+            class="chat-test-status"
+            data-chat-status
+        >
+            Chat cluster загружается…
+        </div>
+
+
+        <div class="chat-test-note">
+            Этот экран предназначен только для тестирования
+            Chat-кластера. World и основной application bootstrap
+            здесь не используются.
+        </div>
+
+    </main>
+
+
+    <div id="chat-mount"></div>
+
+
+    <script type="module">
+
+        import {
+            ChatUI,
+            chat,
+            rooms,
+            avatars
+        } from './src/chat/index.js';
+
+
+        /*
+         * ----------------------------------------
+         * Test data
+         * ----------------------------------------
+         */
+
+        rooms.add(
+            'gaming',
+            'Gaming'
+        );
+
+        rooms.add(
+            'geek',
+            'Geek'
+        );
+
+
+        avatars.add(
+            'pixel',
+            'Pixel',
+            'common',
+            '◆'
+        );
+
+        avatars.add(
+            'star',
+            'Star',
+            'rare',
+            '★'
+        );
+
+        avatars.setUserAvatar(
+            'Player',
+            'pixel'
+        );
+
+        avatars.setUserAvatar(
+            'Admin',
+            'star'
+        );
+
+
+        /*
+         * ----------------------------------------
+         * Test messages
+         * ----------------------------------------
+         */
+
+        chat.setRoom(
+            'global'
+        );
+
+        chat.send(
+            'Добро пожаловать в GEEK CHAT!',
+            {
+                author: 'Admin'
+            }
+        );
+
+        chat.send(
+            'Это автономный тест Chat-кластера.',
+            {
+                author: 'Player'
+            }
+        );
+
+
+        chat.setRoom(
+            'gaming'
+        );
+
+        chat.send(
+            'Gaming room работает отдельно.',
+            {
+                author: 'Player'
+            }
+        );
+
+
+        chat.setRoom(
+            'geek'
+        );
+
+        chat.send(
+            'Geek room готов к тестированию.',
+            {
+                author: 'Admin'
+            }
+        );
+
+
+        /*
+         * ----------------------------------------
+         * Chat UI
+         * ----------------------------------------
+         */
+
+        const mount =
+            document.getElementById(
+                'chat-mount'
+            );
+
+        const status =
+            document.querySelector(
+                '[data-chat-status]'
+            );
+
+
+        const chatUI =
+            new ChatUI({
+                chat,
+                rooms,
+                avatars,
+                locale: 'ru',
+                author: 'Player'
+            });
+
+
+        const mounted =
+            chatUI.mountTo(
+                mount
+            );
+
+
+        if (!mounted) {
+            status.textContent =
+                'Ошибка: ChatUI не удалось запустить.';
+
+            throw new Error(
+                'ChatUI mount failed'
+            );
+        }
+
+
+        /*
+         * Start on Global room.
+         */
+
+        chatUI.setRoom(
+            'global'
+        );
+
+
+        status.textContent =
+            'Chat cluster работает. Текущая комната: Global';
+
+
+        /*
+         * ----------------------------------------
+         * Controls
+         * ----------------------------------------
+         */
+
+        document
+            .querySelector(
+                '[data-action="open"]'
+            )
+            .addEventListener(
+                'click',
+                () => {
+
+                    chatUI.open();
+
+                    status.textContent =
+                        'Chat открыт. Комната: ' +
+                        (
+                            rooms.get(
+                                chat.getRoom()
+                            )?.name ||
+                            chat.getRoom()
+                        );
+                }
+            );
+
+
+        document
+            .querySelectorAll(
+                '[data-room]'
+            )
+            .forEach(
+                button => {
+
+                    button.addEventListener(
+                        'click',
+                        () => {
+
+                            const room =
+                                button.dataset.room;
+
+                            if (
+                                !chatUI.setRoom(
+                                    room
+                                )
+                            ) {
+                                status.textContent =
+                                    'Не удалось открыть комнату: ' +
+                                    room;
+
+                                return;
+                            }
+
+                            chatUI.open();
+
+                            const roomData =
+                                rooms.get(
+                                    room
+                                );
+
+                            status.textContent =
+                                'Текущая комната: ' +
+                                (
+                                    roomData?.name ||
+                                    room
+                                );
+                        }
+                    );
+                }
+            );
+
+
+        document
+            .querySelectorAll(
+                '[data-locale]'
+            )
+            .forEach(
+                button => {
+
+                    button.addEventListener(
+                        'click',
+                        () => {
+
+                            const locale =
+                                button.dataset.locale;
+
+                            chatUI.setLocale(
+                                locale
+                            );
+
+                            status.textContent =
+                                'Язык Chat UI: ' +
+                                locale.toUpperCase();
+                        }
+                    );
+                }
+            );
+
+
+        /*
+         * Debug access.
+         *
+         * Не используется основным приложением.
+         * Удобно для проверки в DevTools.
+         */
+
+        window.__FREEZZ_CHAT_TEST__ = {
+            chat,
+            rooms,
+            avatars,
+            chatUI
+        };
+
+    </script>
+
+</body>
+</html>
