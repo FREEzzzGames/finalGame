@@ -42,9 +42,21 @@ const FARM_LEVEL_REWARD = 2;
  * - уменьшаются;
  * - сохраняют своё направление движения.
  */
-const SPHERE_RADIUS_X_FACTOR = 0.92;
-const SPHERE_RADIUS_Y_FACTOR = 0.92;
-const SPHERE_MIN_SCALE = 0.72;
+const SPHERE_RADIUS_X_FACTOR = 1.0;
+const SPHERE_RADIUS_Y_FACTOR = 1.0;
+
+/*
+ * Максимальный угол сферической поверхности.
+ * Увеличенная кривизна делает шар
+ * заметнее по краям.
+ */
+const SPHERE_MAX_ANGLE = 1.25;
+
+/*
+ * Минимальный размер объекта
+ * на дальнем краю сферы.
+ */
+const SPHERE_MIN_SCALE = 0.50;
 
 /*
  * Экономическая лестница.
@@ -652,29 +664,7 @@ class World {
                     SPHERE_RADIUS_X_FACTOR
             );
 
-        const radiusY =
-            Math.max(
-                1,
-                rect.height *
-                    SPHERE_RADIUS_Y_FACTOR
-            );
-
-        const relativeX =
-            flatX - centerX;
-
-        const relativeY =
-            flatY - centerY;
-
-        const normalizedX =
-            Math.max(
-                -1,
-                Math.min(
-                    1,
-                    relativeX / radiusX
-                )
-            );
-
-        const normalizedY =
+                const normalizedY =
             Math.max(
                 -1,
                 Math.min(
@@ -685,13 +675,11 @@ class World {
 
         const angleX =
             normalizedX *
-            Math.PI /
-            2;
+            SPHERE_MAX_ANGLE;
 
         const angleY =
             normalizedY *
-            Math.PI /
-            2;
+            SPHERE_MAX_ANGLE;
 
         const projectedX =
             Math.sin(
@@ -958,7 +946,9 @@ class World {
         }
 
         this.render();
-    }    /*
+    }
+
+    /*
      * WORKSHOP:
      * Первый пассивный доход.
      *
@@ -1353,3 +1343,23 @@ export {
 };
 
 export default World;
+            Math.max(
+                1,
+                rect.height *
+                    SPHERE_RADIUS_Y_FACTOR
+            );
+
+        const relativeX =
+            flatX - centerX;
+
+        const relativeY =
+            flatY - centerY;
+
+        const normalizedX =
+            Math.max(
+                -1,
+                Math.min(
+                    1,
+                    relativeX / radiusX
+                )
+            );
