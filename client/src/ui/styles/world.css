@@ -169,7 +169,8 @@
 
     transition:
         transform 120ms ease,
-        filter 120ms ease;
+        filter 120ms ease,
+        opacity 160ms ease;
 }
 
 .world-object:active {
@@ -237,6 +238,157 @@
     opacity: 0.7;
 }
 
+/*
+ * FUTURE BUILDINGS
+ *
+ * Недоступные:
+ * полупрозрачные + замок.
+ *
+ * Доступные:
+ * обычная видимость + 🔓.
+ *
+ * Купленные:
+ * полноценный объект + ✓.
+ */
+
+.world-locked-upgrade {
+    display: flex;
+
+    width: 118px;
+    min-height: 116px;
+
+    padding: 12px;
+
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 3px;
+
+    border-radius: 20px;
+
+    background:
+        rgba(255, 255, 255, 0.34);
+
+    border:
+        1px solid rgba(255, 255, 255, 0.42);
+
+    box-shadow:
+        0 8px 22px rgba(70, 74, 80, 0.08);
+
+    color:
+        rgba(40, 48, 45, 0.62);
+
+    opacity: 0.48;
+
+    filter:
+        grayscale(0.3);
+
+    cursor: pointer;
+}
+
+.world-locked-upgrade.is-affordable {
+    background:
+        rgba(255, 255, 255, 0.82);
+
+    border:
+        1px solid rgba(255, 255, 255, 0.72);
+
+    box-shadow:
+        0 10px 26px rgba(70, 74, 80, 0.16);
+
+    color:
+        #25342b;
+
+    opacity: 0.92;
+
+    filter:
+        grayscale(0);
+
+    transform:
+        translate(-50%, -50%);
+}
+
+.world-locked-upgrade.is-affordable:hover {
+    filter:
+        brightness(1.04);
+}
+
+.world-locked-upgrade.is-purchased {
+    background:
+        rgba(255, 255, 255, 0.94);
+
+    border:
+        1px solid rgba(255, 255, 255, 0.9);
+
+    box-shadow:
+        0 12px 30px rgba(70, 74, 80, 0.2);
+
+    color:
+        #24352b;
+
+    opacity: 1;
+
+    filter:
+        grayscale(0);
+
+    cursor: default;
+}
+
+.locked-icon {
+    display: block;
+
+    font-size: 34px;
+
+    line-height: 1;
+
+    opacity: 0.72;
+}
+
+.world-locked-upgrade.is-affordable
+.locked-icon {
+    opacity: 1;
+}
+
+.world-locked-upgrade.is-purchased
+.locked-icon {
+    opacity: 1;
+}
+
+.locked-title {
+    display: block;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    letter-spacing: 0.06em;
+
+    white-space: nowrap;
+}
+
+.locked-price {
+    display: block;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    opacity: 0.72;
+
+    line-height: 1.2;
+}
+
+.locked-state {
+    display: block;
+
+    margin-top: 1px;
+
+    font-size: 13px;
+
+    line-height: 1;
+
+    opacity: 0.8;
+}
+
 @media (max-width: 480px) {
     .world-balance {
         top: max(10px, env(safe-area-inset-top));
@@ -254,6 +406,25 @@
 
     .object-icon {
         font-size: 44px;
+    }
+
+    .world-locked-upgrade {
+        width: 104px;
+        min-height: 104px;
+
+        padding: 10px;
+    }
+
+    .locked-icon {
+        font-size: 30px;
+    }
+
+    .locked-title {
+        font-size: 10px;
+    }
+
+    .locked-price {
+        font-size: 9px;
     }
 }
 
