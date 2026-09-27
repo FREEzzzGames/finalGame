@@ -51,6 +51,7 @@ class World {
 
         this.farmLevel = 0;
         this.lastTapTime = 0;
+        this.hintTimer = null;
 
         this.init();
     }
@@ -61,6 +62,16 @@ class World {
         this.bindEvents();
 
         this.updateViewport();
+
+        /*
+         * Камера сразу смотрит в центр игрового мира,
+         * где находится первая ферма.
+         */
+        camera.setPosition(
+            WORLD_WIDTH / 2,
+            WORLD_HEIGHT / 2
+        );
+
         this.render();
 
         this.showHint(
@@ -73,14 +84,23 @@ class World {
 
         this.root.className = 'game-world';
 
-        this.viewport = document.createElement('div');
-        this.viewport.className = 'world-viewport';
+        this.viewport =
+            document.createElement('div');
 
-        this.scene = document.createElement('div');
-        this.scene.className = 'world-scene';
+        this.viewport.className =
+            'world-viewport';
 
-        this.hud = document.createElement('div');
-        this.hud.className = 'world-hud';
+        this.scene =
+            document.createElement('div');
+
+        this.scene.className =
+            'world-scene';
+
+        this.hud =
+            document.createElement('div');
+
+        this.hud.className =
+            'world-hud';
 
         this.balanceElement =
             document.createElement('div');
@@ -112,13 +132,16 @@ class World {
     createObjects() {
         this.scene.innerHTML = '';
 
-        const farm = document.createElement('button');
+        const farm =
+            document.createElement('button');
 
         farm.type = 'button';
+
         farm.className =
             'world-object world-farm';
 
-        farm.dataset.objectId = 'farm';
+        farm.dataset.objectId =
+            'farm';
 
         farm.innerHTML = `
             <span class="object-icon">🌾</span>
@@ -130,17 +153,20 @@ class World {
             'click',
             event => {
                 event.stopPropagation();
+
                 this.interactWithFarm();
             }
         );
 
-        this.scene.appendChild(farm);
+        this.scene.appendChild(
+            farm
+        );
 
         objects.add({
             id: 'farm',
             type: 'building',
-            x: 0,
-            y: 0,
+            x: WORLD_WIDTH / 2,
+            y: WORLD_HEIGHT / 2,
             layer: 'buildings',
             data: {
                 level: 0
@@ -184,11 +210,12 @@ class World {
 
                 this.pointerActive = false;
 
-                const result = gestures.end(
-                    event.clientX,
-                    event.clientY,
-                    event.timeStamp
-                );
+                const result =
+                    gestures.end(
+                        event.clientX,
+                        event.clientY,
+                        event.timeStamp
+                    );
 
                 this.handleGesture(
                     result
@@ -211,6 +238,7 @@ class World {
             () => {
                 this.pointerActive = false;
                 this.lastPointer = null;
+
                 gestures.cancel();
             }
         );
@@ -219,17 +247,23 @@ class World {
             'resize',
             () => {
                 this.updateViewport();
+                this.clampCamera();
                 this.render();
             }
         );
     }
 
     handleGesture(result) {
-        if (!result || result.type === 'none') {
+        if (
+            !result ||
+            result.type === 'none'
+        ) {
             return;
         }
 
-        if (result.type === 'tap') {
+        if (
+            result.type === 'tap'
+        ) {
             this.handleWorldTap(
                 result.x,
                 result.y
@@ -252,6 +286,7 @@ class World {
                 0
             );
 
+            this.clampCamera();
             this.render();
 
             return;
@@ -271,18 +306,75 @@ class World {
                 distance
             );
 
+            this.clampCamera();
             this.render();
         }
     }
 
+    clampCamera() {
+        const viewportWidth =
+            camera.viewportWidth;
+
+        const viewportHeight =
+            camera.viewportHeight;
+
+        const halfWidth =
+            viewportWidth /
+            (2 * camera.zoom);
+
+        const halfHeight =
+            viewportHeight /
+            (2 * camera.zoom);
+
+        const minX =
+            Math.min(
+                halfWidth,
+                WORLD_WIDTH / 2
+            );
+
+        const maxX =
+            Math.max(
+                WORLD_WIDTH - halfWidth,
+                WORLD_WIDTH / 2
+            );
+
+        const minY =
+            Math.min(
+                halfHeight,
+                WORLD_HEIGHT / 2
+            );
+
+        const maxY =
+            Math.max(
+                WORLD_HEIGHT - halfHeight,
+                WORLD_HEIGHT / 2
+            );
+
+        const nextX =
+            Math.min(
+                maxX,
+                Math.max(
+                    minX,
+                    camera.x
+                )
+            );
+
+        const nextY =
+            Math.min(
+                maxY,
+                Math.max(
+                    minY,
+                    camera.y
+                )
+            );
+
+        camera.setPosition(
+            nextX,
+            nextY
+        );
+    }
+
     handleWorldTap(x, y) {
-        /*
-         * The farm is currently the only interactive
-         * world object.
-         *
-         * If the tap happens on the farm button,
-         * its own click handler handles the action.
-         */
         const target =
             document.elementFromPoint(
                 x,
@@ -302,17 +394,22 @@ class World {
     }
 
     interactWithFarm() {
-        const now = Date.now();
+        const now =
+            Date.now();
 
         if (
-            now - this.lastTapTime < 120
+            now - this.lastTapTime <
+            120
         ) {
             return;
         }
 
-        this.lastTapTime = now;
+        this.lastTapTime =
+            now;
 
-        if (this.farmLevel === 0) {
+        if (
+            this.farmLevel === 0
+        ) {
             if (
                 economy.getBalance() <
                 FARM_BASE_COST
@@ -390,6 +487,8 @@ class World {
 
         this.updateBalance();
 
+        this.clampCamera();
+
         const rect =
             this.viewport.getBoundingClientRect();
 
@@ -399,10 +498,6 @@ class World {
         const centerY =
             rect.height / 2;
 
-        /*
-         * World is larger than the screen.
-         * Camera position changes through swipes.
-         */
         const offsetX =
             centerX - camera.x;
 
@@ -430,10 +525,15 @@ class World {
             farm.style.top =
                 `${WORLD_HEIGHT / 2}px`;
 
-            farm.querySelector(
-                '.object-level'
-            ).textContent =
-                `LVL ${this.farmLevel}`;
+            const levelElement =
+                farm.querySelector(
+                    '.object-level'
+                );
+
+            if (levelElement) {
+                levelElement.textContent =
+                    `LVL ${this.farmLevel}`;
+            }
         }
 
         this.root.style.setProperty(
@@ -474,14 +574,15 @@ class World {
             this.hintTimer
         );
 
-        this.hintTimer = setTimeout(
-            () => {
-                this.hintElement.classList.remove(
-                    'is-visible'
-                );
-            },
-            1600
-        );
+        this.hintTimer =
+            setTimeout(
+                () => {
+                    this.hintElement.classList.remove(
+                        'is-visible'
+                    );
+                },
+                1600
+            );
     }
 
     getState() {
@@ -505,7 +606,9 @@ class World {
         this.root.innerHTML = '';
 
         objects.clear();
+
         camera.reset();
+
         gestures.cancel();
     }
 }
