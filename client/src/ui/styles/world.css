@@ -117,7 +117,7 @@
  *
  * Правый верхний угол.
  *
- * По размеру и форме симметрична
+ * Визуально симметрична
  * блоку баланса слева.
  */
 .world-language-button {
@@ -126,10 +126,9 @@
     top: max(12px, env(safe-area-inset-top));
     right: 12px;
 
-    min-width: 48px;
-    height: 34px;
+    min-width: 64px;
 
-    padding: 0 12px;
+    padding: 8px 12px;
 
     display: flex;
 
@@ -155,8 +154,8 @@
         "Segoe UI",
         sans-serif;
 
-    font-size: 14px;
-    font-weight: 800;
+    font-size: 16px;
+    font-weight: 700;
 
     line-height: 1;
 
@@ -491,14 +490,13 @@
         top: max(10px, env(safe-area-inset-top));
         right: 10px;
 
-        min-width: 46px;
-        height: 32px;
+        min-width: 64px;
 
-        padding: 0 10px;
+        padding: 7px 10px;
 
-        border-radius: 13px;
+        border-radius: 14px;
 
-        font-size: 13px;
+        font-size: 15px;
     }
 
     .world-farm {
