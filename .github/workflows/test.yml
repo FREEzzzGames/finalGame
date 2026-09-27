@@ -1,0 +1,28 @@
+name: Server Test
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "server/**"
+      - "package.json"
+      - ".github/workflows/test.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check server modules
+        run: node --check server/src/server.js
+
+      - name: Run tests
+        run: npm test
