@@ -51,6 +51,14 @@ const {
     handleNotFound
 } = require('./not-found');
 
+const {
+    handleApiError
+} = require('./error-handler');
+
+const {
+    handleResult
+} = require('./handle');
+
 module.exports = {
     MAX_BODY_SIZE,
     readJsonBody,
@@ -68,5 +76,7 @@ module.exports = {
     applyCorsHeaders,
     isPreflightRequest,
     handlePreflight,
-    handleNotFound
+    handleNotFound,
+    handleApiError,
+    handleResult
 };
