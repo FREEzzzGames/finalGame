@@ -10,9 +10,16 @@
 
     <title>FREEzzzGames — GEEK CHAT TEST</title>
 
+    <!-- Chat UI -->
     <link
         rel="stylesheet"
         href="./src/ui/styles/chat.css"
+    >
+
+    <!-- Chat Widget -->
+    <link
+        rel="stylesheet"
+        href="./src/ui/styles/chat-widget.css"
     >
 
     <style>
@@ -306,12 +313,22 @@
 
         <div class="chat-test-note">
             Этот экран предназначен только для тестирования
-            Chat-кластера. World и основной application bootstrap
+            Chat-кластера и Chat Widget.
+            World и основной application bootstrap
             здесь не используются.
         </div>
 
     </main>
 
+
+    <!--
+     * Chat Widget mount
+     *
+     * Сам виджет создаёт:
+     * - кнопку открытия;
+     * - контейнер ChatUI;
+     * - управление состоянием открытия.
+     -->
 
     <div id="chat-mount"></div>
 
@@ -319,11 +336,13 @@
     <script type="module">
 
         import {
-            ChatUI,
             chat,
             rooms,
             avatars
         } from './src/chat/index.js';
+
+        import ChatWidget
+            from './src/chat/chat-widget.js';
 
 
         /*
@@ -425,7 +444,7 @@
 
         /*
          * ----------------------------------------
-         * Chat UI
+         * Chat Widget
          * ----------------------------------------
          */
 
@@ -440,8 +459,8 @@
             );
 
 
-        const chatUI =
-            new ChatUI({
+        const chatWidget =
+            new ChatWidget({
                 chat,
                 rooms,
                 avatars,
@@ -451,17 +470,17 @@
 
 
         const mounted =
-            chatUI.mountTo(
+            chatWidget.mountTo(
                 mount
             );
 
 
         if (!mounted) {
             status.textContent =
-                'Ошибка: ChatUI не удалось запустить.';
+                'Ошибка: Chat Widget не удалось запустить.';
 
             throw new Error(
-                'ChatUI mount failed'
+                'ChatWidget mount failed'
             );
         }
 
@@ -470,16 +489,21 @@
          * ----------------------------------------
          * Start on Global
          * ----------------------------------------
+         *
+         * В отличие от предыдущей версии,
+         * ChatUI здесь напрямую не открывается.
+         *
+         * Управление теперь делает Widget.
          */
 
-        chatUI.setRoom(
+        chatWidget.setRoom(
             'global'
         );
 
-        chatUI.open();
+        chatWidget.open();
 
         status.textContent =
-            'Chat cluster работает. Текущая комната: Global';
+            'Chat Widget работает. Текущая комната: Global';
 
 
         /*
@@ -503,7 +527,7 @@
                                 button.dataset.room;
 
                             if (
-                                !chatUI.setRoom(
+                                !chatWidget.setRoom(
                                     room
                                 )
                             ) {
@@ -514,7 +538,7 @@
                                 return;
                             }
 
-                            chatUI.open();
+                            chatWidget.open();
 
                             const roomData =
                                 rooms.get(
@@ -553,12 +577,12 @@
                             const locale =
                                 button.dataset.locale;
 
-                            chatUI.setLocale(
+                            chatWidget.setLocale(
                                 locale
                             );
 
                             status.textContent =
-                                'Язык Chat UI: ' +
+                                'Язык Chat Widget: ' +
                                 locale.toUpperCase();
                         }
                     );
@@ -576,7 +600,9 @@
             chat,
             rooms,
             avatars,
-            chatUI
+            chatWidget,
+            chatUI:
+                chatWidget.chatUI
         };
 
     </script>
