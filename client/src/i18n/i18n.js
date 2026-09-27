@@ -8,7 +8,8 @@
  * - хранить текущий язык;
  * - переключать RU → DE → EN → RU;
  * - сохранять выбор языка;
- * - предоставлять текущий словарь.
+ * - предоставлять текущий словарь;
+ * - уведомлять интерфейс о смене языка.
  *
  * Игровая логика здесь отсутствует.
  */
@@ -51,7 +52,10 @@ function loadLanguage() {
             return saved;
         }
     } catch {
-        // localStorage может быть недоступен.
+        /*
+         * localStorage может быть
+         * недоступен.
+         */
     }
 
     return 'ru';
@@ -64,8 +68,10 @@ function saveLanguage(code) {
             code
         );
     } catch {
-        // Язык продолжит работать
-        // даже без localStorage.
+        /*
+         * Язык продолжит работать
+         * даже без localStorage.
+         */
     }
 }
 
@@ -73,6 +79,8 @@ class I18n {
     constructor() {
         this.currentCode =
             loadLanguage();
+
+        this.listeners = new Set();
     }
 
     get code() {
@@ -94,11 +102,62 @@ class I18n {
         );
     }
 
+    subscribe(listener) {
+        if (
+            typeof listener !==
+            'function'
+        ) {
+            return () => {};
+        }
+
+        this.listeners.add(
+            listener
+        );
+
+        /*
+         * Возвращаем функцию
+         * отписки.
+         */
+        return () => {
+            this.listeners.delete(
+                listener
+            );
+        };
+    }
+
+    notify() {
+        const locale =
+            this.locale;
+
+        this.listeners.forEach(
+            listener => {
+                try {
+                    listener(
+                        locale,
+                        this.currentCode
+                    );
+                } catch (error) {
+                    console.error(
+                        '[FREEzzzGames] ' +
+                        'Localization listener error:',
+                        error
+                    );
+                }
+            }
+        );
+    }
+
     setLanguage(code) {
         if (
             !isSupportedLanguage(code)
         ) {
             return false;
+        }
+
+        if (
+            this.currentCode === code
+        ) {
+            return true;
         }
 
         this.currentCode =
@@ -107,6 +166,8 @@ class I18n {
         saveLanguage(
             code
         );
+
+        this.notify();
 
         return true;
     }
