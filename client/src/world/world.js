@@ -966,7 +966,6 @@ class World {
         const rect =
             this.viewport.getBoundingClientRect();
 
-        const centerX =
          const centerX =
             rect.width / 2;
 
