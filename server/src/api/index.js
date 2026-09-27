@@ -25,6 +25,10 @@ const {
 } = require('./router');
 
 const {
+    registerDefaultRoutes
+} = require('./routes');
+
+const {
     createContext
 } = require('./context');
 
@@ -135,10 +139,10 @@ const {
     hasHeader
 } = require('./headers');
 
-const {
-    registerDefaultRoutes
-} = require('./routes');
-
+/*
+ * Register the default API routes once when
+ * the central API module is loaded.
+ */
 registerDefaultRoutes();
 
 module.exports = {
@@ -188,6 +192,5 @@ module.exports = {
     isMethod,
     normalizeHeaderName,
     getHeader,
-    hasHeader,
-    registerDefaultRoutes
+    hasHeader
 };
