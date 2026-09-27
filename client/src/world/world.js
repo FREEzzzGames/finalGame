@@ -737,7 +737,16 @@ class World {
             `${building.icon} ${building.title} построен`
         );
 
-        this.startPassiveIncome();
+        /*
+         * WORKSHOP начинает приносить
+         * первый пассивный доход сразу
+         * после покупки.
+         */
+        if (
+            id === 'workshop'
+        ) {
+            this.startPassiveIncome();
+        }
 
         this.render();
     }
@@ -745,6 +754,8 @@ class World {
     /*
      * WORKSHOP:
      * Первый пассивный доход.
+     *
+     * +1 🪙 каждые 10 секунд.
      */
     applyPassiveIncome() {
         if (
@@ -817,23 +828,39 @@ class World {
         this.saveState();
     }
 
+    /*
+     * Последовательный таймер:
+     *
+     * 10 секунд
+     * ↓
+     * +1 🪙
+     * ↓
+     * сохранение
+     * ↓
+     * следующий цикл
+     *
+     * Это исключает несколько
+     * параллельных интервалов.
+     */
     startPassiveIncome() {
-        clearInterval(
+        clearTimeout(
             this.passiveTimer
         );
 
         if (
             !this.buildings.workshop
         ) {
+            this.passiveTimer = null;
             return;
         }
 
         this.passiveTimer =
-            setInterval(
+            setTimeout(
                 () => {
                     if (
                         !this.buildings.workshop
                     ) {
+                        this.passiveTimer = null;
                         return;
                     }
 
@@ -846,6 +873,8 @@ class World {
                     );
 
                     this.render();
+
+                    this.startPassiveIncome();
                 },
                 BUILDINGS.workshop.passiveInterval
             );
@@ -950,123 +979,4 @@ class World {
             farm.style.top =
                 `${WORLD_HEIGHT / 2}px`;
 
-            const levelElement =
-                farm.querySelector(
-                    '.object-level'
-                );
-
-            if (levelElement) {
-                levelElement.textContent =
-                    `LVL ${this.farmLevel}`;
-            }
-        }
-
-        Object.values(
-            BUILDINGS
-        ).forEach(
-            building => {
-                const element =
-                    this.scene.querySelector(
-                        `[data-object-id="${building.id}"]`
-                    );
-
-                if (!element) {
-                    return;
-                }
-                element.style.left =
-                    `${building.x}px`;
-
-                element.style.top =
-                    `${building.y}px`;
-
-                const purchased =
-                    this.buildings[
-                        building.id
-                    ];
-
-                const affordable =
-                    economy.canAfford(
-                        building.cost
-                    );
-
-                element.classList.toggle(
-                    'is-purchased',
-                    purchased
-                );
-
-                element.classList.toggle(
-                    'is-affordable',
-                    !purchased &&
-                    affordable
-                );
-
-                element.classList.toggle(
-                    'is-locked',
-                    !purchased
-                );
-
-                const stateElement =
-                    element.querySelector(
-                        '.locked-state'
-                    );
-
-                if (stateElement) {
-                    if (purchased) {
-                        stateElement.textContent =
-                            '✓';
-                    } else if (affordable) {
-                        stateElement.textContent =
-                            '🔓';
-                    } else {
-                        stateElement.textContent =
-                            '🔒';
-                    }
-                }
-
-                const priceElement =
-                    element.querySelector(
-                        '.locked-price'
-                    );
-
-                if (priceElement) {
-                    priceElement.textContent =
-                        purchased
-                            ? 'BUILT'
-                            : `${building.cost} 🪙`;
-                }
-            }
-        );
-    }
-
-    destroy() {
-        clearTimeout(
-            this.hintTimer
-        );
-
-        clearInterval(
-            this.passiveTimer
-        );
-
-        this.hintTimer = null;
-        this.passiveTimer = null;
-
-        this.pointerActive = false;
-        this.lastPointer = null;
-
-        gestures.cancel();
-
-        if (this.root) {
-            this.root.innerHTML = '';
-        }
-    }
-}
-
-export {
-    World,
-    WORLD_WIDTH,
-    WORLD_HEIGHT,
-    BUILDINGS
-};
-
-export default World;
-       
+            const 
