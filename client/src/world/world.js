@@ -34,32 +34,10 @@ const COIN_REWARD = 1;
 const FARM_BASE_COST = 10;
 const FARM_LEVEL_REWARD = 2;
 
-/*
- * Параметры сферической проекции.
- *
- * Центр мира остаётся практически плоским.
- * К краям объекты:
- * - заворачиваются внутрь;
- * - уменьшаются;
- * - сохраняют своё направление движения.
- */
 const SPHERE_RADIUS_MULTIPLIER = 1.5;
 
-/*
- * Минимальный размер объекта
- * на дальнем краю сферы.
- */
 const SPHERE_MIN_SCALE = 0.50;
 
-/*
- * Экономическая лестница.
- *
- * FARM       10
- * WORKSHOP   75
- * STADIUM    400
- * STUDIO     2000
- * SHOPPING   10000
- */
 const BUILDINGS = Object.freeze({
     workshop: {
         id: 'workshop',
@@ -274,11 +252,6 @@ class World {
         this.languageButton.className =
             'world-language-button';
 
-        /*
-         * HUD в текущем CSS не принимает
-         * pointer events. Кнопке языка
-         * разрешаем их отдельно.
-         */
         this.languageButton.style.pointerEvents =
             'auto';
 
@@ -305,6 +278,12 @@ class World {
                 }
             );
 
+        /*
+         * Устанавливаем текущий язык
+         * сразу при создании интерфейса.
+         */
+        this.updateLocalization();
+
         this.viewport.appendChild(
             this.scene
         );
@@ -318,9 +297,6 @@ class World {
     createObjects() {
         this.scene.innerHTML = '';
 
-        /*
-         * FARM
-         */
         const farm =
             document.createElement('button');
 
@@ -363,9 +339,6 @@ class World {
             }
         });
 
-        /*
-         * БУДУЩИЕ ЗДАНИЯ
-         */
         Object.values(
             BUILDINGS
         ).forEach(
@@ -486,13 +459,6 @@ class World {
                     return;
                 }
 
-                /*
-                 * Камера следует за пальцем.
-                 *
-                 * Движение мира происходит
-                 * в противоположную сторону
-                 * движения пальца.
-                 */
                 camera.move(
                     -result.deltaX,
                     -result.deltaY
@@ -579,13 +545,6 @@ class World {
             return;
         }
 
-        /*
-         * При swipe камера уже двигалась
-         * вместе с пальцем через pointermove.
-         *
-         * Поэтому здесь больше НЕ делаем
-         * дополнительный скачок.
-         */
         if (
             result.type === 'swipe'
         ) {
@@ -657,17 +616,6 @@ class World {
         );
     }
 
-    /*
-     * Сферическая проекция.
-     *
-     * Мы не меняем реальные координаты
-     * объектов в мире. Меняется только
-     * их визуальное положение на экране.
-     *
-     * Поэтому экономика, объекты,
-     * сохранение и логика остаются
-     * независимыми от визуальной деформации.
-     */
     getSphereProjection(
         worldX,
         worldY
@@ -737,19 +685,6 @@ class World {
                 )
             );
 
-        /*
-         * Угол теперь напрямую зависит
-         * от радиуса сферы.
-         *
-         * R = 720 px
-         * боковое здание = 240 px
-         *
-         * angle = atan(240 / 720)
-         * ≈ 18.4°
-         *
-         * Поэтому радиус действительно
-         * определяет кривизну мира.
-         */
         const angleX =
             Math.atan(
                 relativeX /
@@ -758,9 +693,7 @@ class World {
             Math.atan(
                 relativeY /
                 radiusY
-            );
-
-        const projectedX =
+            );        const projectedX =
             Math.sin(
                 angleX
             ) *
@@ -835,14 +768,6 @@ class World {
                 worldY
             );
 
-        /*
-         * Используем отдельные CSS
-         * transform properties.
-         *
-         * Базовый transform элемента
-         * translate(-50%, -50%) остаётся
-         * нетронутым.
-         */
         element.style.translate =
             `${projection.translateX}px ${projection.translateY}px`;
 
@@ -1109,12 +1034,6 @@ class World {
         this.render();
     }
 
-    /*
-     * WORKSHOP:
-     * Первый пассивный доход.
-     *
-     * +1 🪙 каждые 10 секунд.
-     */
     applyPassiveIncome() {
         if (
             !this.buildings.workshop
@@ -1167,11 +1086,6 @@ class World {
             return;
         }
 
-        /*
-         * Максимум 24 часа
-         * офлайн-дохода в текущей
-         * клиентской версии.
-         */
         const safeCycles =
             Math.min(
                 cycles,
@@ -1186,20 +1100,6 @@ class World {
         this.saveState();
     }
 
-    /*
-     * Последовательный таймер:
-     *
-     * 10 секунд
-     * ↓
-     * +1 🪙
-     * ↓
-     * сохранение
-     * ↓
-     * следующий цикл
-     *
-     * Это исключает несколько
-     * параллельных интервалов.
-     */
     startPassiveIncome() {
         clearTimeout(
             this.passiveTimer
@@ -1325,9 +1225,6 @@ class World {
         this.scene.style.transform =
             `translate3d(${offsetX}px, ${offsetY}px, 0)`;
 
-        /*
-         * FARM
-         */
         const farm =
             this.scene.querySelector(
                 '.world-farm'
@@ -1365,9 +1262,6 @@ class World {
             );
         }
 
-        /*
-         * БУДУЩИЕ ЗДАНИЯ
-         */
         Object.values(
             BUILDINGS
         ).forEach(
@@ -1445,11 +1339,6 @@ class World {
                             : `${building.cost} 🪙`;
                 }
 
-                /*
-                 * Только визуальная сферическая
-                 * проекция. Координаты здания
-                 * в мире не изменяются.
-                 */
                 this.applySphereProjection(
                     element,
                     building.x,
@@ -1481,10 +1370,6 @@ class World {
 
         gestures.cancel();
 
-        /*
-         * Сбрасываем индивидуальные
-         * визуальные свойства объектов.
-         */
         if (this.scene) {
             const objectsInScene =
                 this.scene.querySelectorAll(
