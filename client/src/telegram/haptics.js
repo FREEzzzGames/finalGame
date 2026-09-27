@@ -127,3 +127,5 @@ const TelegramHaptics = Object.freeze({
     notification,
     selection
 });
+
+export default TelegramHaptics;
