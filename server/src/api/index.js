@@ -97,6 +97,14 @@ const {
     executeHttpPipeline
 } = require('./http-pipeline');
 
+const {
+    handleApiRequest
+} = require('./request-handler');
+
+const {
+    handleApi
+} = require('./api-handler');
+
 module.exports = {
     MAX_BODY_SIZE,
     readJsonBody,
@@ -130,5 +138,7 @@ module.exports = {
     createHttpResult,
     createHttpSuccess,
     createHttpError,
-    executeHttpPipeline
+    executeHttpPipeline,
+    handleApiRequest,
+    handleApi
 };
