@@ -6,6 +6,9 @@
  *
  * Coordinates request parsing, context creation,
  * API execution and HTTP response handling.
+ *
+ * CORS headers are applied to every API response,
+ * not only to OPTIONS preflight responses.
  */
 
 const {
@@ -25,6 +28,10 @@ const {
     sendError
 } = require('./response');
 
+const {
+    applyCorsHeaders
+} = require('./cors');
+
 const handleApiRequest = async (
     request,
     response
@@ -36,6 +43,19 @@ const handleApiRequest = async (
     if (!response || typeof response !== 'object') {
         throw new Error('Response is required');
     }
+
+    /*
+     * CORS must be present on both:
+     *
+     * - successful API responses;
+     * - API error responses.
+     *
+     * The preflight request is handled separately.
+     */
+    applyCorsHeaders(
+        response,
+        request
+    );
 
     try {
         const body = await readJsonBody(request);
