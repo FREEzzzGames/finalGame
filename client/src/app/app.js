@@ -174,8 +174,8 @@ async function authenticateTelegram() {
     }
 
     /*
-     * За пределами Telegram авторизация
-     * не требуется для локального/веб-тестирования.
+     * Авторизация выполняется только
+     * внутри реального Telegram WebApp runtime.
      */
     if (!TelegramAdapter.isAvailable()) {
         return null;
@@ -400,10 +400,31 @@ async function startApp() {
      */
     await loadModules();
 
-    const telegram =
-        initializeTelegram();
+    /*
+     * ВАЖНО:
+     *
+     * Наличие window.Telegram.WebApp само по себе
+     * НЕ означает, что приложение запущено внутри Telegram.
+     *
+     * telegram.js проверяет наличие реального
+     * Telegram initData.
+     *
+     * Поэтому сначала определяем runtime,
+     * и только внутри Telegram вызываем init().
+     */
+    const telegramAvailable =
+        TelegramAdapter.isAvailable();
 
-    if (telegram) {
+    if (telegramAvailable) {
+        const telegram =
+            initializeTelegram();
+
+        if (!telegram) {
+            throw new Error(
+                '[FREEzzzGames] Telegram WebApp initialization failed.'
+            );
+        }
+
         updateBootStatus(
             'FREEzzzGames'
         );
@@ -425,7 +446,7 @@ async function startApp() {
         );
 
         console.info(
-            '[FREEzzzGames] Telegram WebApp API is not available. ' +
+            '[FREEzzzGames] Telegram WebApp runtime is not available. ' +
             'Running in browser mode.'
         );
 
@@ -450,6 +471,10 @@ async function startApp() {
      */
     startChatWidget();
 
+    /*
+     * Boot Screen удаляется только после
+     * успешного запуска World и Chat.
+     */
     hideBootScreen();
 
     /*
