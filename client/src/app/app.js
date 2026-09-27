@@ -7,12 +7,32 @@
  * Ответственность:
  * - запустить приложение;
  * - инициализировать Telegram;
+ * - авторизовать Telegram-пользователя через сервер;
  * - создать Main World;
  * - передать управление игровому модулю.
  *
  * Игровая логика находится в world/world.js.
  *
  * ВАЖНО:
+ * Telegram Mini App является основным целевым runtime.
+ *
+ * Авторизация:
+ *
+ * Telegram WebApp
+ *      ↓
+ * initData
+ *      ↓
+ * TelegramAdapter.authenticate()
+ *      ↓
+ * GET /state
+ *      ↓
+ * серверная проверка Telegram
+ *      ↓
+ * verified profile + game state
+ *
+ * В браузере вне Telegram приложение продолжает
+ * работать в тестовом режиме без Telegram-сессии.
+ *
  * Версия модулей используется для исключения ситуации,
  * когда после обновления Mini App браузер/Telegram
  * смешивает старую и новую версии ES-модулей.
@@ -31,6 +51,9 @@ const bootStatus =
     document.querySelector('#boot-status');
 
 let world = null;
+
+let playerSession = null;
+
 let unsubscribeTelegramViewport = null;
 
 let TelegramAdapter = null;
@@ -132,6 +155,35 @@ function initializeTelegram() {
     }
 }
 
+async function authenticateTelegram() {
+    if (!TelegramAdapter) {
+        return null;
+    }
+
+    /*
+     * За пределами Telegram авторизация
+     * не требуется для локального/веб-тестирования.
+     */
+    if (!TelegramAdapter.isAvailable()) {
+        return null;
+    }
+
+    const session =
+        await TelegramAdapter.authenticate();
+
+    if (!session || !session.authenticated) {
+        throw new Error(
+            `[FREEzzzGames] Telegram authentication failed: ${
+                session && session.error
+                    ? session.error
+                    : 'UNKNOWN_ERROR'
+            }`
+        );
+    }
+
+    return session;
+}
+
 function createWorldMount() {
     if (!appRoot) {
         throw new Error(
@@ -171,6 +223,43 @@ function startWorld() {
     return world;
 }
 
+function applyPlayerSession() {
+    if (!appRoot) {
+        return;
+    }
+
+    if (
+        !playerSession ||
+        !playerSession.authenticated
+    ) {
+        appRoot.dataset.telegramAuthenticated =
+            'false';
+
+        return;
+    }
+
+    appRoot.dataset.telegramAuthenticated =
+        'true';
+
+    if (
+        playerSession.profile &&
+        playerSession.profile.telegramUserId !== undefined
+    ) {
+        appRoot.dataset.telegramUserId =
+            String(
+                playerSession.profile.telegramUserId
+            );
+    }
+
+    if (
+        playerSession.profile &&
+        typeof playerSession.profile.username === 'string'
+    ) {
+        appRoot.dataset.telegramUsername =
+            playerSession.profile.username;
+    }
+}
+
 function hideBootScreen() {
     if (!bootScreen) {
         return;
@@ -199,6 +288,18 @@ async function startApp() {
         updateBootStatus(
             'FREEzzzGames'
         );
+
+        /*
+         * Telegram является авторитетным источником
+         * идентификации пользователя.
+         *
+         * World запускается только после успешной
+         * серверной проверки initData.
+         */
+        playerSession =
+            await authenticateTelegram();
+
+        applyPlayerSession();
     } else {
         updateBootStatus(
             'FREEzzzGames'
@@ -208,6 +309,9 @@ async function startApp() {
             '[FREEzzzGames] Telegram WebApp API is not available. ' +
             'Running in browser mode.'
         );
+
+        appRoot.dataset.telegramAuthenticated =
+            'false';
     }
 
     appRoot.dataset.appVersion =
@@ -239,6 +343,13 @@ async function startApp() {
     console.info(
         `[FREEzzzGames] App initialized. Version: ${APP_VERSION}`
     );
+
+    if (playerSession) {
+        console.info(
+            '[FREEzzzGames] Telegram player authenticated.',
+            playerSession.profile
+        );
+    }
 }
 
 startApp()
@@ -261,4 +372,8 @@ export {
 
 export {
     world
+};
+
+export {
+    playerSession
 };
