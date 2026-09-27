@@ -81,6 +81,11 @@
     pointer-events: none;
 }
 
+/*
+ * BALANCE
+ *
+ * Левый верхний угол.
+ */
 .world-balance {
     position: absolute;
 
@@ -93,7 +98,8 @@
 
     border-radius: 14px;
 
-    background: rgba(255, 255, 255, 0.88);
+    background:
+        rgba(255, 255, 255, 0.88);
 
     box-shadow:
         0 4px 14px rgba(0, 0, 0, 0.12);
@@ -104,6 +110,87 @@
     line-height: 1;
 
     white-space: nowrap;
+}
+
+/*
+ * LANGUAGE
+ *
+ * Правый верхний угол.
+ *
+ * По размеру и форме симметрична
+ * блоку баланса слева.
+ */
+.world-language-button {
+    position: absolute;
+
+    top: max(12px, env(safe-area-inset-top));
+    right: 12px;
+
+    min-width: 48px;
+    height: 34px;
+
+    padding: 0 12px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border: 0;
+
+    border-radius: 14px;
+
+    background:
+        rgba(255, 255, 255, 0.88);
+
+    box-shadow:
+        0 4px 14px rgba(0, 0, 0, 0.12);
+
+    color: #18251c;
+
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    font-size: 14px;
+    font-weight: 800;
+
+    line-height: 1;
+
+    letter-spacing: 0.04em;
+
+    white-space: nowrap;
+
+    cursor: pointer;
+
+    pointer-events: auto;
+
+    touch-action: manipulation;
+
+    -webkit-tap-highlight-color: transparent;
+
+    transition:
+        transform 120ms ease,
+        filter 120ms ease,
+        background 120ms ease;
+}
+
+.world-language-button:hover {
+    filter: brightness(1.04);
+}
+
+.world-language-button:active {
+    transform: scale(0.94);
+}
+
+.world-language-button:focus-visible {
+    outline:
+        2px solid rgba(24, 37, 28, 0.45);
+
+    outline-offset: 2px;
 }
 
 .world-hint {
@@ -121,7 +208,8 @@
 
     border-radius: 16px;
 
-    background: rgba(20, 28, 24, 0.88);
+    background:
+        rgba(20, 28, 24, 0.88);
 
     color: #ffffff;
 
@@ -399,6 +487,20 @@
         font-size: 15px;
     }
 
+    .world-language-button {
+        top: max(10px, env(safe-area-inset-top));
+        right: 10px;
+
+        min-width: 46px;
+        height: 32px;
+
+        padding: 0 10px;
+
+        border-radius: 13px;
+
+        font-size: 13px;
+    }
+
     .world-farm {
         width: 140px;
         min-height: 120px;
@@ -430,7 +532,8 @@
 
 @media (prefers-reduced-motion: reduce) {
     .world-object,
-    .world-hint {
+    .world-hint,
+    .world-language-button {
         transition: none;
     }
 }
