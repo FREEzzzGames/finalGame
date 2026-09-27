@@ -45,7 +45,7 @@ const {
 
 const {
     handlePreflight
-} = require('./preflight');
+} = require('./preflight);
 
 const {
     handleNotFound
@@ -124,6 +124,17 @@ const {
     normalizeStatusCode
 } = require('./status-code');
 
+const {
+    normalizeMethod,
+    isMethod
+} = require('./method');
+
+const {
+    normalizeHeaderName,
+    getHeader,
+    hasHeader
+} = require('./headers');
+
 module.exports = {
     MAX_BODY_SIZE,
     readJsonBody,
@@ -166,5 +177,10 @@ module.exports = {
     MIN_STATUS_CODE,
     MAX_STATUS_CODE,
     isValidStatusCode,
-    normalizeStatusCode
+    normalizeStatusCode,
+    normalizeMethod,
+    isMethod,
+    normalizeHeaderName,
+    getHeader,
+    hasHeader
 };
