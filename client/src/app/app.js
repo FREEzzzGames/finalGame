@@ -1,4 +1,4 @@
-'use strict';
+3'use strict';
 
 /*
  * FREEzzzGames
@@ -40,7 +40,7 @@
  */
 
 const APP_VERSION = '0.2.1';
-const MODULE_VERSION = '0.2.1';
+const MODULE_VERSION = '0.2.2';
 
 const appRoot =
     document.querySelector('#app');
