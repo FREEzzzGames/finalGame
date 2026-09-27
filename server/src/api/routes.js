@@ -16,11 +16,21 @@ const {
     getHealth
 } = require('./health');
 
+const {
+    getState
+} = require('../users/state-route');
+
 const registerDefaultRoutes = () => {
     registerRoute(
         'GET',
         '/health',
         () => getHealth()
+    );
+
+    registerRoute(
+        'GET',
+        '/state',
+        context => getState(context)
     );
 };
 
