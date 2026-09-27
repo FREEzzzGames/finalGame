@@ -33,6 +33,10 @@ const {
     calculateDebitBalance
 } = require('./balance');
 
+const {
+    checkTransaction
+} = require('./transaction-check');
+
 module.exports = {
     createEconomyState,
     canAfford,
@@ -44,5 +48,6 @@ module.exports = {
     isAllowedAmount,
     hasSufficientBalance,
     calculateCreditBalance,
-    calculateDebitBalance
+    calculateDebitBalance,
+    checkTransaction
 };
