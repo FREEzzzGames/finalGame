@@ -8,6 +8,10 @@
  * Persistence and atomic balance changes are handled separately.
  */
 
+const {
+    isAllowedAmount
+} = require('./limits');
+
 const validateTransaction = transaction => {
     if (
         transaction === null ||
@@ -29,13 +33,17 @@ const validateTransaction = transaction => {
         };
     }
 
-    if (
-        !Number.isSafeInteger(transaction.amount) ||
-        transaction.amount === 0
-    ) {
+    if (!Number.isSafeInteger(transaction.amount)) {
         return {
             valid: false,
             reason: 'INVALID_AMOUNT'
+        };
+    }
+
+    if (!isAllowedAmount(transaction.amount)) {
+        return {
+            valid: false,
+            reason: 'AMOUNT_LIMIT_EXCEEDED'
         };
     }
 
