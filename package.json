@@ -1,0 +1,14 @@
+{
+  "name": "freezzgames",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FREEzzzGames server",
+  "main": "server/src/server.js",
+  "scripts": {
+    "start": "node server/src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
