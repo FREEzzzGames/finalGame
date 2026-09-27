@@ -18,10 +18,22 @@ const {
     isDebit
 } = require('./transactions');
 
+const {
+    validateTransaction
+} = require('./validation');
+
+const {
+    MAX_TRANSACTION_AMOUNT,
+    isAllowedAmount
+} = require('./limits');
+
 module.exports = {
     createEconomyState,
     canAfford,
     createTransaction,
     isCredit,
-    isDebit
+    isDebit,
+    validateTransaction,
+    MAX_TRANSACTION_AMOUNT,
+    isAllowedAmount
 };
