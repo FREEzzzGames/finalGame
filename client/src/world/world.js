@@ -664,7 +664,28 @@ class World {
                     SPHERE_RADIUS_X_FACTOR
             );
 
-                const normalizedY =
+        const radiusY =
+            Math.max(
+                1,
+                rect.height *
+                    SPHERE_RADIUS_Y_FACTOR
+            );
+
+        const relativeX =
+            flatX - centerX;
+
+        const relativeY =
+            flatY - centerY;
+
+        const normalizedX =
+            Math.max(
+                -1,
+                Math.min(
+                    1,                    relativeX / radiusX
+                )
+            );
+
+        const normalizedY =
             Math.max(
                 -1,
                 Math.min(
@@ -1343,23 +1364,3 @@ export {
 };
 
 export default World;
-            Math.max(
-                1,
-                rect.height *
-                    SPHERE_RADIUS_Y_FACTOR
-            );
-
-        const relativeX =
-            flatX - centerX;
-
-        const relativeY =
-            flatY - centerY;
-
-        const normalizedX =
-            Math.max(
-                -1,
-                Math.min(
-                    1,
-                    relativeX / radiusX
-                )
-            );
