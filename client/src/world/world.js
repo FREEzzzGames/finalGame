@@ -42,15 +42,7 @@ const FARM_LEVEL_REWARD = 2;
  * - уменьшаются;
  * - сохраняют своё направление движения.
  */
-const SPHERE_RADIUS_X_FACTOR = 1.0;
-const SPHERE_RADIUS_Y_FACTOR = 1.0;
-
-/*
- * Максимальный угол сферической поверхности.
- * Увеличенная кривизна делает шар
- * заметнее по краям.
- */
-const SPHERE_MAX_ANGLE = 1.25;
+const SPHERE_RADIUS_MULTIPLIER = 1.5;
 
 /*
  * Минимальный размер объекта
@@ -112,6 +104,16 @@ const BUILDINGS = Object.freeze({
         y: WORLD_HEIGHT / 2 + 220
     }
 });
+
+const SIDE_BUILDINGS_DISTANCE =
+    Math.abs(
+        BUILDINGS.workshop.x -
+        BUILDINGS.stadium.x
+    );
+
+const SPHERE_RADIUS =
+    SIDE_BUILDINGS_DISTANCE *
+    SPHERE_RADIUS_MULTIPLIER;
 
 class World {
     constructor(root) {
@@ -660,15 +662,15 @@ class World {
         const radiusX =
             Math.max(
                 1,
-                rect.width *
-                    SPHERE_RADIUS_X_FACTOR
+                SPHERE_RADIUS *
+                    camera.zoom
             );
 
         const radiusY =
             Math.max(
                 1,
-                rect.height *
-                    SPHERE_RADIUS_Y_FACTOR
+                SPHERE_RADIUS *
+                    camera.zoom
             );
 
         const relativeX =
@@ -681,8 +683,8 @@ class World {
             Math.max(
                 -1,
                 Math.min(
-                    1,                    relativeX / radiusX
-                )
+                    1,
+                    relativeX / radiusX                )
             );
 
         const normalizedY =
@@ -694,13 +696,30 @@ class World {
                 )
             );
 
+        /*
+         * Угол теперь напрямую зависит
+         * от радиуса сферы.
+         *
+         * R = 720 px
+         * боковое здание = 240 px
+         *
+         * angle = atan(240 / 720)
+         * ≈ 18.4°
+         *
+         * Поэтому радиус действительно
+         * определяет кривизну мира.
+         */
         const angleX =
-            normalizedX *
-            SPHERE_MAX_ANGLE;
+            Math.atan(
+                relativeX /
+                radiusX
+            );
 
         const angleY =
-            normalizedY *
-            SPHERE_MAX_ANGLE;
+            Math.atan(
+                relativeY /
+                radiusY
+            );
 
         const projectedX =
             Math.sin(
