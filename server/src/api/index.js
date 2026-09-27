@@ -105,6 +105,14 @@ const {
     handleApi
 } = require('./api-handler');
 
+const {
+    createRequestContext
+} = require('./request-context');
+
+const {
+    createRequestInput
+} = require('./request-input');
+
 module.exports = {
     MAX_BODY_SIZE,
     readJsonBody,
@@ -140,5 +148,7 @@ module.exports = {
     createHttpError,
     executeHttpPipeline,
     handleApiRequest,
-    handleApi
+    handleApi,
+    createRequestContext,
+    createRequestInput
 };
