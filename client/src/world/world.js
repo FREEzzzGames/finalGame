@@ -647,11 +647,25 @@ class World {
                 camera.zoom +
             centerY;
 
+        /*
+         * Горизонтальный радиус ограничивается
+         * половиной реальной ширины viewport.
+         *
+         * Это важно для Telegram Mini App:
+         * на узких экранах боковые здания
+         * не должны уходить за границы
+         * доступной игровой области.
+         *
+         * На широких экранах исходная
+         * геометрия полностью сохраняется.
+         */
         const radiusX =
             Math.max(
                 1,
-                SPHERE_RADIUS *
-                    camera.zoom
+                Math.min(
+                    SPHERE_RADIUS * camera.zoom,
+                    rect.width / 2
+                )
             );
 
         const radiusY =
@@ -689,11 +703,15 @@ class World {
             Math.atan(
                 relativeX /
                 radiusX
-            );        const angleY =
+            );
+
+        const angleY =
             Math.atan(
                 relativeY /
                 radiusY
-            );        const projectedX =
+            );
+
+        const projectedX =
             Math.sin(
                 angleX
             ) *
@@ -773,9 +791,7 @@ class World {
 
         element.style.scale =
             `${projection.scale}`;
-    }
-
-    updateLocalization() {
+    }    updateLocalization() {
         if (this.languageButton) {
             this.languageButton.textContent =
                 i18n.code.toUpperCase();
