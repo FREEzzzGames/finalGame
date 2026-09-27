@@ -8,6 +8,7 @@
  * - вертикальный 2D мир;
  * - горизонтальное перемещение;
  * - вертикальное перемещение;
+ * - плавное управление камерой пальцем;
  * - tap по объекту;
  * - активная экономика FARM;
  * - здания следующего уровня;
@@ -397,6 +398,49 @@ class World {
         );
 
         this.viewport.addEventListener(
+            'pointermove',
+            event => {
+                if (!this.pointerActive) {
+                    return;
+                }
+
+                const result =
+                    gestures.move(
+                        event.clientX,
+                        event.clientY,
+                        event.timeStamp
+                    );
+
+                if (
+                    !result ||
+                    result.type !== 'move'
+                ) {
+                    return;
+                }
+
+                /*
+                 * Камера следует за пальцем.
+                 *
+                 * Движение мира происходит
+                 * в противоположную сторону
+                 * движения пальца.
+                 */
+                camera.move(
+                    -result.deltaX,
+                    -result.deltaY
+                );
+
+                this.clampCamera();
+                this.render();
+
+                this.lastPointer = {
+                    x: event.clientX,
+                    y: event.clientY
+                };
+            }
+        );
+
+        this.viewport.addEventListener(
             'pointerup',
             event => {
                 if (!this.pointerActive) {
@@ -467,40 +511,16 @@ class World {
             return;
         }
 
+        /*
+         * При swipe камера уже двигалась
+         * вместе с пальцем через pointermove.
+         *
+         * Поэтому здесь больше НЕ делаем
+         * дополнительный скачок на 180px.
+         */
         if (
-            result.type === 'swipe' &&
-            result.axis === 'horizontal'
+            result.type === 'swipe'
         ) {
-            const distance =
-                result.direction === 'left'
-                    ? 180
-                    : -180;
-
-            camera.move(
-                distance,
-                0
-            );
-
-            this.clampCamera();
-            this.render();
-
-            return;
-        }
-
-        if (
-            result.type === 'swipe' &&
-            result.axis === 'vertical'
-        ) {
-            const distance =
-                result.direction === 'up'
-                    ? 180
-                    : -180;
-
-            camera.move(
-                0,
-                distance
-            );
-
             this.clampCamera();
             this.render();
         }
@@ -947,6 +967,7 @@ class World {
             this.viewport.getBoundingClientRect();
 
         const centerX =
+         const centerX =
             rect.width / 2;
 
         const centerY =
@@ -980,14 +1001,14 @@ class World {
                 `${WORLD_HEIGHT / 2}px`;
 
             const levelElement =
-    farm.querySelector(
-        '.object-level'
-    );
+                farm.querySelector(
+                    '.object-level'
+                );
 
-if (levelElement) {
-    levelElement.textContent =
-        `LVL ${this.farmLevel}`;
-}
+            if (levelElement) {
+                levelElement.textContent =
+                    `LVL ${this.farmLevel}`;
+            }
         }
 
         Object.values(
