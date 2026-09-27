@@ -113,6 +113,17 @@ const {
     createRequestInput
 } = require('./request-input');
 
+const {
+    normalizeApiResult
+} = require('./result-normalizer');
+
+const {
+    MIN_STATUS_CODE,
+    MAX_STATUS_CODE,
+    isValidStatusCode,
+    normalizeStatusCode
+} = require('./status-code');
+
 module.exports = {
     MAX_BODY_SIZE,
     readJsonBody,
@@ -150,5 +161,10 @@ module.exports = {
     handleApiRequest,
     handleApi,
     createRequestContext,
-    createRequestInput
+    createRequestInput,
+    normalizeApiResult,
+    MIN_STATUS_CODE,
+    MAX_STATUS_CODE,
+    isValidStatusCode,
+    normalizeStatusCode
 };
