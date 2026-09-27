@@ -116,6 +116,13 @@ test('getState returns initial state for authenticated Telegram user', () => {
         assert.deepEqual(
             result.data,
             {
+                profile: {
+                    telegramUserId: '12345',
+                    username: null,
+                    firstName: 'Test',
+                    lastName: null
+                },
+
                 state: {
                     version: 1,
                     economy: {
