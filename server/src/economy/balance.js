@@ -50,7 +50,30 @@ const calculateCreditBalance = (balance, amount) => {
     return nextBalance;
 };
 
+const calculateDebitBalance = (balance, amount) => {
+    if (
+        !Number.isSafeInteger(balance) ||
+        balance < 0
+    ) {
+        throw new Error('Invalid balance');
+    }
+
+    if (
+        !Number.isSafeInteger(amount) ||
+        amount <= 0
+    ) {
+        throw new Error('Invalid debit amount');
+    }
+
+    if (balance < amount) {
+        throw new Error('Insufficient balance');
+    }
+
+    return balance - amount;
+};
+
 module.exports = {
     hasSufficientBalance,
-    calculateCreditBalance
+    calculateCreditBalance,
+    calculateDebitBalance
 };
