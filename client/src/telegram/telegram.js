@@ -116,6 +116,83 @@ const TelegramAdapter = (() => {
         return webApp.isExpanded === true;
     }
 
+    function getViewportHeight() {
+        if (!webApp) {
+            return null;
+        }
+
+        const height =
+            Number(webApp.viewportHeight);
+
+        return Number.isFinite(height) && height > 0
+            ? height
+            : null;
+    }
+
+    function getViewportStableHeight() {
+        if (!webApp) {
+            return null;
+        }
+
+        const height =
+            Number(webApp.viewportStableHeight);
+
+        return Number.isFinite(height) && height > 0
+            ? height
+            : null;
+    }
+
+    function onViewportChanged(callback) {
+        if (
+            !webApp ||
+            typeof callback !== 'function' ||
+            typeof webApp.onEvent !== 'function'
+        ) {
+            return () => {};
+        }
+
+        const handler = () => {
+            callback({
+                height: getViewportHeight(),
+                stableHeight: getViewportStableHeight(),
+                isStateStable:
+                    webApp.isStateStable === true
+            });
+        };
+
+        try {
+            webApp.onEvent(
+                'viewportChanged',
+                handler
+            );
+
+            return () => {
+                try {
+                    if (
+                        typeof webApp.offEvent === 'function'
+                    ) {
+                        webApp.offEvent(
+                            'viewportChanged',
+                            handler
+                        );
+                    }
+                } catch (error) {
+                    console.warn(
+                        '[FREEzzzGames] Telegram viewport listener cleanup error:',
+                        error
+                    );
+                }
+            };
+        } catch (error) {
+            console.warn(
+                '[FREEzzzGames] Telegram viewport listener error:',
+                error
+            );
+
+            return () => {};
+        }
+    }
+
     function setHeaderColor(color) {
         if (
             !webApp ||
@@ -189,6 +266,9 @@ const TelegramAdapter = (() => {
         getPlatform,
         getColorScheme,
         isExpanded,
+        getViewportHeight,
+        getViewportStableHeight,
+        onViewportChanged,
         setHeaderColor,
         setBackgroundColor,
         close
