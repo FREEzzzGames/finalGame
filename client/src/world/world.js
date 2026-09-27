@@ -9,14 +9,14 @@
  * - горизонтальное перемещение;
  * - вертикальное перемещение;
  * - tap по объекту;
- * - получение монет;
- * - развитие первого объекта;
+ * - активная экономика FARM;
+ * - здания следующего уровня;
+ * - пассивный доход с WORKSHOP;
  * - локальное сохранение состояния;
  * - минимальный HUD.
  *
  * Серверная авторитетность будет подключена
- * отдельно. Этот модуль отвечает только за
- * клиентское представление и взаимодействие.
+ * отдельно.
  */
 
 import gestures from './gestures.js';
@@ -31,6 +31,61 @@ const WORLD_HEIGHT = 3600;
 const COIN_REWARD = 1;
 const FARM_BASE_COST = 10;
 const FARM_LEVEL_REWARD = 2;
+
+/*
+ * Экономическая лестница.
+ *
+ * FARM       10
+ * WORKSHOP   75
+ * STADIUM    400
+ * STUDIO     2000
+ * SHOPPING   10000
+ */
+const BUILDINGS = Object.freeze({
+    workshop: {
+        id: 'workshop',
+        icon: '🔧',
+        title: 'WORKSHOP',
+        cost: 75,
+        passiveIncome: 1,
+        passiveInterval: 10000,
+        x: WORLD_WIDTH / 2 - 240,
+        y: WORLD_HEIGHT / 2
+    },
+
+    stadium: {
+        id: 'stadium',
+        icon: '🏟️',
+        title: 'STADIUM',
+        cost: 400,
+        passiveIncome: 0,
+        passiveInterval: 0,
+        x: WORLD_WIDTH / 2 + 240,
+        y: WORLD_HEIGHT / 2
+    },
+
+    studio: {
+        id: 'studio',
+        icon: '🎬',
+        title: 'STUDIO',
+        cost: 2000,
+        passiveIncome: 0,
+        passiveInterval: 0,
+        x: WORLD_WIDTH / 2,
+        y: WORLD_HEIGHT / 2 - 220
+    },
+
+    shopping: {
+        id: 'shopping',
+        icon: '🏢',
+        title: 'SHOPPING',
+        cost: 10000,
+        passiveIncome: 0,
+        passiveInterval: 0,
+        x: WORLD_WIDTH / 2,
+        y: WORLD_HEIGHT / 2 + 220
+    }
+});
 
 class World {
     constructor(root) {
@@ -52,8 +107,19 @@ class World {
         this.lastPointer = null;
 
         this.farmLevel = 0;
+
+        this.buildings = {
+            workshop: false,
+            stadium: false,
+            studio: false,
+            shopping: false
+        };
+
+        this.lastSavedAt = 0;
+
         this.lastTapTime = 0;
         this.hintTimer = null;
+        this.passiveTimer = null;
 
         this.init();
     }
@@ -67,14 +133,14 @@ class World {
 
         this.updateViewport();
 
-        /*
-         * Камера сразу смотрит в центр игрового мира,
-         * где находится первая ферма.
-         */
         camera.setPosition(
             WORLD_WIDTH / 2,
             WORLD_HEIGHT / 2
         );
+
+        this.applyOfflinePassiveIncome();
+
+        this.startPassiveIncome();
 
         this.render();
 
@@ -93,6 +159,23 @@ class World {
 
         this.farmLevel =
             state.farmLevel;
+
+        this.buildings = {
+            workshop:
+                state.buildings.workshop,
+
+            stadium:
+                state.buildings.stadium,
+
+            studio:
+                state.buildings.studio,
+
+            shopping:
+                state.buildings.shopping
+        };
+
+        this.lastSavedAt =
+            state.lastSavedAt;
     }
 
     saveState() {
@@ -101,14 +184,25 @@ class World {
                 economy.getBalance(),
 
             farmLevel:
-                this.farmLevel
+                this.farmLevel,
+
+            buildings: {
+                ...this.buildings
+            },
+
+            lastSavedAt:
+                Date.now()
         });
+
+        this.lastSavedAt =
+            Date.now();
     }
 
     createStructure() {
         this.root.innerHTML = '';
 
-        this.root.className = 'game-world';
+        this.root.className =
+            'game-world';
 
         this.viewport =
             document.createElement('div');
@@ -158,6 +252,9 @@ class World {
     createObjects() {
         this.scene.innerHTML = '';
 
+        /*
+         * FARM
+         */
         const farm =
             document.createElement('button');
 
@@ -199,6 +296,78 @@ class World {
                     this.farmLevel
             }
         });
+
+        /*
+         * БУДУЩИЕ ЗДАНИЯ
+         */
+        Object.values(
+            BUILDINGS
+        ).forEach(
+            building => {
+                const element =
+                    document.createElement('button');
+
+                element.type = 'button';
+
+                element.className =
+                    'world-object world-locked-upgrade';
+
+                element.dataset.objectId =
+                    building.id;
+
+                element.innerHTML = `
+                    <span class="locked-icon">
+                        ${building.icon}
+                    </span>
+
+                    <span class="locked-title">
+                        ${building.title}
+                    </span>
+
+                    <span class="locked-price">
+                        ${building.cost} 🪙
+                    </span>
+
+                    <span class="locked-state">
+                        🔒
+                    </span>
+                `;
+
+                element.addEventListener(
+                    'click',
+                    event => {
+                        event.stopPropagation();
+
+                        this.interactWithBuilding(
+                            building.id
+                        );
+                    }
+                );
+
+                this.scene.appendChild(
+                    element
+                );
+
+                objects.add({
+                    id: building.id,
+                    type: 'building',
+                    x: building.x,
+                    y: building.y,
+                    layer: 'buildings',
+                    data: {
+                        level:
+                            this.buildings[
+                                building.id
+                            ]
+                                ? 1
+                                : 0,
+
+                        cost:
+                            building.cost
+                    }
+                });
+            }
+        );
     }
 
     bindEvents() {
@@ -410,13 +579,24 @@ class World {
 
         if (
             target &&
-            target.closest('.world-farm')
+            target.closest(
+                '.world-farm'
+            )
+        ) {
+            return;
+        }
+
+        if (
+            target &&
+            target.closest(
+                '.world-locked-upgrade'
+            )
         ) {
             return;
         }
 
         this.showHint(
-            '👆 Нажми на 🌾'
+            '👆 Нажми на объект'
         );
     }
 
@@ -497,6 +677,184 @@ class World {
         );
 
         this.updateBalance();
+
+        this.render();
+    }
+
+    interactWithBuilding(id) {
+        const building =
+            BUILDINGS[id];
+
+        if (!building) {
+            return;
+        }
+
+        if (
+            this.buildings[id]
+        ) {
+            this.showHint(
+                `${building.icon} ${building.title}`
+            );
+
+            return;
+        }
+
+        if (
+            !economy.canAfford(
+                building.cost
+            )
+        ) {
+            this.showHint(
+                `🔒 ${building.cost} 🪙`
+            );
+
+            return;
+        }
+
+        const spent =
+            economy.spend(
+                building.cost
+            );
+
+        if (!spent) {
+            return;
+        }
+
+        this.buildings[id] =
+            true;
+
+        objects.update(
+            id,
+            {
+                data: {
+                    level: 1
+                }
+            }
+        );
+
+        this.saveState();
+
+        this.showHint(
+            `${building.icon} ${building.title} построен`
+        );
+
+        this.render();
+    }
+
+    /*
+     * WORKSHOP:
+     *
+     * Первый пассивный доход.
+     *
+     * Пока экономика клиентская,
+     * расчёт выполняется локально.
+     *
+     * После подключения сервера
+     * этот расчёт будет перенесён
+     * на серверную авторитетную модель.
+     */
+    applyPassiveIncome() {
+        if (
+            !this.buildings.workshop
+        ) {
+            return;
+        }
+
+        const building =
+            BUILDINGS.workshop;
+
+        economy.add(
+            building.passiveIncome
+        );
+    }
+
+    applyOfflinePassiveIncome() {
+        if (
+            !this.buildings.workshop
+        ) {
+            return;
+        }
+
+        if (
+            !this.lastSavedAt
+        ) {
+            return;
+        }
+
+        const now =
+            Date.now();
+
+        const elapsed =
+            Math.max(
+                0,
+                now - this.lastSavedAt
+            );
+
+        const building =
+            BUILDINGS.workshop;
+
+        const cycles =
+            Math.floor(
+                elapsed /
+                building.passiveInterval
+            );
+
+        if (
+            cycles <= 0
+        ) {
+            return;
+        }
+
+        /*
+         * Ограничиваем офлайн-начисление
+         * 24 часами в текущей клиентской версии.
+         */
+        const safeCycles =
+            Math.min(
+                cycles,
+                8640
+            );
+
+        economy.add(
+            safeCycles *
+            building.passiveIncome
+        );
+
+        this.saveState();
+    }
+
+    startPassiveIncome() {
+        clearInterval(
+            this.passiveTimer
+        );
+
+        if (
+            !this.buildings.workshop
+        ) {
+            return;
+        }
+
+        this.passiveTimer =
+            setInterval(
+                () => {
+                    if (
+                        !this.buildings.workshop
+                    ) {
+                        return;
+                    }
+
+                    this.applyPassiveIncome();
+
+                    this.saveState();
+
+                    this.showHint(
+                        '🪙 +1'
+                    );
+
+                    this.render();
+                },
+                BUILDINGS.workshop.passiveInterval
+            );
     }
 
     updateViewport() {
@@ -569,85 +927,40 @@ class World {
             }
         }
 
-        this.root.style.setProperty(
-            '--world-x',
-            `${camera.x}px`
-        );
-
-        this.root.style.setProperty(
-            '--world-y',
-            `${camera.y}px`
-        );
-    }
-
-    updateBalance() {
-        if (!this.balanceElement) {
-            return;
-        }
-
-        this.balanceElement.textContent =
-            `🪙 ${Math.floor(
-                economy.getBalance()
-            )}`;
-    }
-
-    showHint(message) {
-        if (!this.hintElement) {
-            return;
-        }
-
-        this.hintElement.textContent =
-            message;
-
-        this.hintElement.classList.add(
-            'is-visible'
-        );
-
-        clearTimeout(
-            this.hintTimer
-        );
-
-        this.hintTimer =
-            setTimeout(
-                () => {
-                    this.hintElement.classList.remove(
-                        'is-visible'
+        Object.values(
+            BUILDINGS
+        ).forEach(
+            building => {
+                const element =
+                    this.scene.querySelector(
+                        `[data-object-id="${building.id}"]`
                     );
-                },
-                1600
-            );
-    }
 
-    getState() {
-        return {
-            balance:
-                economy.getBalance(),
+                if (!element) {
+                    return;
+                }
 
-            farmLevel:
-                this.farmLevel,
+                const purchased =
+                    this.buildings[
+                        building.id
+                    ];
 
-            camera:
-                camera.getState()
-        };
-    }
+                const affordable =
+                    economy.canAfford(
+                        building.cost
+                    );
 
-    destroy() {
-        clearTimeout(
-            this.hintTimer
-        );
+                element.classList.toggle(
+                    'is-purchased',
+                    purchased
+                );
 
-        this.root.innerHTML = '';
+                element.classList.toggle(
+                    'is-affordable',
+                    !purchased &&
+                    affordable
+                );
 
-        objects.clear();
-
-        camera.reset();
-
-        gestures.cancel();
-    }
-}
-
-export {
-    World
-};
-
-export default World;
+                element.classList.toggle(
+                    'is-locked',
+                    !purc
