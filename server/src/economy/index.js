@@ -27,6 +27,12 @@ const {
     isAllowedAmount
 } = require('./limits');
 
+const {
+    hasSufficientBalance,
+    calculateCreditBalance,
+    calculateDebitBalance
+} = require('./balance');
+
 module.exports = {
     createEconomyState,
     canAfford,
@@ -35,5 +41,8 @@ module.exports = {
     isDebit,
     validateTransaction,
     MAX_TRANSACTION_AMOUNT,
-    isAllowedAmount
+    isAllowedAmount,
+    hasSufficientBalance,
+    calculateCreditBalance,
+    calculateDebitBalance
 };
