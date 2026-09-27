@@ -28,6 +28,7 @@ const bootStatus =
     document.querySelector('#boot-status');
 
 let world = null;
+let unsubscribeTelegramViewport = null;
 
 function updateBootStatus(message) {
     if (!bootStatus) {
@@ -38,9 +39,49 @@ function updateBootStatus(message) {
         message;
 }
 
+function applyTelegramViewportHeight() {
+    const height =
+        TelegramAdapter.getViewportHeight();
+
+    if (
+        !height ||
+        !Number.isFinite(height)
+    ) {
+        return;
+    }
+
+    document.documentElement.style.setProperty(
+        '--tg-viewport-height',
+        `${height}px`
+    );
+}
+
 function initializeTelegram() {
     try {
-        return TelegramAdapter.init();
+        const telegram =
+            TelegramAdapter.init();
+
+        if (telegram) {
+            applyTelegramViewportHeight();
+
+            unsubscribeTelegramViewport =
+                TelegramAdapter.onViewportChanged(
+                    () => {
+                        applyTelegramViewportHeight();
+
+                        /*
+                         * World already listens to resize.
+                         * Re-dispatch it here because Telegram viewport
+                         * changes are not guaranteed to be browser resizes.
+                         */
+                        window.dispatchEvent(
+                            new Event('resize')
+                        );
+                    }
+                );
+        }
+
+        return telegram;
     } catch (error) {
         console.warn(
             '[FREEzzzGames] Telegram initialization warning:',
