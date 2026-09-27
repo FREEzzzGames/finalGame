@@ -1,0 +1,268 @@
+/*
+ * FREEzzzGames
+ * GEEK CHAT WIDGET
+ *
+ * Отдельные стили плавающего Chat Widget.
+ *
+ * Визуальная концепция:
+ * Windows 98 / classic desktop UI.
+ *
+ * Этот файл не изменяет World UI
+ * и не изменяет внутренние стили Chat.
+ */
+
+.chat-widget {
+    position: fixed;
+
+    right: 18px;
+    bottom: 18px;
+
+    z-index: 1100;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-end;
+
+    pointer-events: none;
+
+    font-family:
+        "MS Sans Serif",
+        "Microsoft Sans Serif",
+        Tahoma,
+        Arial,
+        sans-serif;
+}
+
+
+/*
+ * Контейнер Chat.
+ *
+ * Сам ChatUI управляет содержимым,
+ * а Widget отвечает только за его
+ * расположение над кнопкой.
+ */
+
+.chat-widget-panel {
+    position: relative;
+
+    width: 0;
+    height: 0;
+
+    pointer-events: none;
+}
+
+
+/*
+ * Кнопка открытия Chat
+ */
+
+.chat-widget-button {
+    position: relative;
+
+    width: 48px;
+    height: 48px;
+
+    margin: 0;
+
+    padding: 0;
+
+    box-sizing: border-box;
+
+    pointer-events: auto;
+
+    cursor: pointer;
+
+    border: 2px solid;
+
+    border-top-color: #ffffff;
+    border-left-color: #ffffff;
+
+    border-right-color: #404040;
+    border-bottom-color: #404040;
+
+    border-radius: 0;
+
+    background: #c0c0c0;
+
+    color: #000000;
+
+    font-family:
+        "MS Sans Serif",
+        "Microsoft Sans Serif",
+        Tahoma,
+        Arial,
+        sans-serif;
+
+    font-size: 22px;
+
+    font-weight: normal;
+
+    line-height: 44px;
+
+    text-align: center;
+
+    box-shadow:
+        1px 1px 0 #000000;
+
+    outline: none;
+
+    appearance: none;
+
+    -webkit-appearance: none;
+
+    user-select: none;
+
+    -webkit-user-select: none;
+}
+
+
+/*
+ * Верхняя маленькая подпись
+ */
+
+.chat-widget-button::after {
+    content: attr(data-label);
+
+    position: absolute;
+
+    right: 0;
+    bottom: calc(100% + 5px);
+
+    display: none;
+
+    padding:
+        2px
+        5px;
+
+    white-space: nowrap;
+
+    background: #ffffe1;
+
+    color: #000000;
+
+    border: 1px solid #000000;
+
+    font-family:
+        "MS Sans Serif",
+        "Microsoft Sans Serif",
+        Tahoma,
+        Arial,
+        sans-serif;
+
+    font-size: 11px;
+
+    line-height: 14px;
+
+    box-shadow:
+        1px 1px 0 #808080;
+}
+
+
+.chat-widget-button:hover::after {
+    display: block;
+}
+
+
+/*
+ * Нажатое состояние.
+ *
+ * Классическая Windows 98
+ * инверсия 3D-кнопки.
+ */
+
+.chat-widget-button:active {
+    border-top-color: #404040;
+    border-left-color: #404040;
+
+    border-right-color: #ffffff;
+    border-bottom-color: #ffffff;
+
+    box-shadow: none;
+
+    transform:
+        translate(
+            1px,
+            1px
+        );
+}
+
+
+/*
+ * Focus.
+ */
+
+.chat-widget-button:focus-visible {
+    outline:
+        1px dotted
+        #000000;
+
+    outline-offset:
+        -5px;
+}
+
+
+/*
+ * Открытое состояние.
+ *
+ * Когда Chat открыт, кнопка становится
+ * обычной кнопкой закрытия.
+ */
+
+.chat-widget-button[aria-expanded="true"] {
+    font-size: 24px;
+}
+
+
+/*
+ * Mobile
+ */
+
+@media (max-width: 600px) {
+    .chat-widget {
+        right: 12px;
+        bottom: 12px;
+    }
+
+    .chat-widget-button {
+        width: 46px;
+        height: 46px;
+
+        font-size: 21px;
+
+        line-height: 42px;
+    }
+}
+
+
+/*
+ * Очень маленькие экраны.
+ */
+
+@media (max-width: 360px) {
+    .chat-widget {
+        right: 8px;
+        bottom: 8px;
+    }
+
+    .chat-widget-button {
+        width: 44px;
+        height: 44px;
+
+        font-size: 20px;
+
+        line-height: 40px;
+    }
+}
+
+
+/*
+ * Reduced motion.
+ */
+
+@media (prefers-reduced-motion: reduce) {
+    .chat-widget-button {
+        transform: none;
+    }
+}
