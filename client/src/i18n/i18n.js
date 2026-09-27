@@ -4,107 +4,174 @@
  * FREEzzzGames
  * Localization manager
  *
- * Supported languages:
- * RU / DE / EN
+ * Ответственность:
+ * - хранить текущий язык;
+ * - переключать RU → DE → EN → RU;
+ * - сохранять выбор языка;
+ * - предоставлять текущий словарь.
  *
- * This module only manages localization.
- * It does not modify UI, routing or game logic.
+ * Игровая логика здесь отсутствует.
  */
 
 import RU from './ru.js';
 import DE from './de.js';
 import EN from './en.js';
 
-const LANGUAGES = Object.freeze({
-    ru: RU,
-    de: DE,
-    en: EN
-});
+const STORAGE_KEY =
+    'freezzgames.language.v1';
 
-const LANGUAGE_ORDER = Object.freeze(['ru', 'de', 'en']);
+const LANGUAGES = Object.freeze([
+    RU,
+    DE,
+    EN
+]);
 
-let currentLanguage = 'ru';
+const LANGUAGE_CODES = Object.freeze([
+    'ru',
+    'de',
+    'en'
+]);
 
 function isSupportedLanguage(code) {
-    return LANGUAGE_ORDER.includes(code);
+    return LANGUAGE_CODES.includes(
+        code
+    );
 }
 
-function getLanguage() {
-    return currentLanguage;
-}
+function loadLanguage() {
+    try {
+        const saved =
+            localStorage.getItem(
+                STORAGE_KEY
+            );
 
-function setLanguage(code) {
-    if (!isSupportedLanguage(code)) {
-        return false;
-    }
-
-    currentLanguage = code;
-    return true;
-}
-
-function cycleLanguage() {
-    const currentIndex = LANGUAGE_ORDER.indexOf(currentLanguage);
-    const nextIndex = (currentIndex + 1) % LANGUAGE_ORDER.length;
-
-    currentLanguage = LANGUAGE_ORDER[nextIndex];
-
-    return currentLanguage;
-}
-
-function getDictionary(code = currentLanguage) {
-    if (!isSupportedLanguage(code)) {
-        return LANGUAGES[currentLanguage];
-    }
-
-    return LANGUAGES[code];
-}
-
-function get(path, fallback = '') {
-    const dictionary = getDictionary();
-
-    if (!path || typeof path !== 'string') {
-        return fallback;
-    }
-
-    const parts = path.split('.');
-    let value = dictionary;
-
-    for (const part of parts) {
         if (
-            value === null ||
-            value === undefined ||
-            typeof value !== 'object' ||
-            !(part in value)
+            isSupportedLanguage(saved)
         ) {
-            return fallback;
+            return saved;
+        }
+    } catch {
+        // localStorage может быть недоступен.
+    }
+
+    return 'ru';
+}
+
+function saveLanguage(code) {
+    try {
+        localStorage.setItem(
+            STORAGE_KEY,
+            code
+        );
+    } catch {
+        // Язык продолжит работать
+        // даже без localStorage.
+    }
+}
+
+class I18n {
+    constructor() {
+        this.currentCode =
+            loadLanguage();
+    }
+
+    get code() {
+        return this.currentCode;
+    }
+
+    get locale() {
+        return this.getLocale(
+            this.currentCode
+        );
+    }
+
+    getLocale(code) {
+        return (
+            LANGUAGES.find(
+                language =>
+                    language.code === code
+            ) || RU
+        );
+    }
+
+    setLanguage(code) {
+        if (
+            !isSupportedLanguage(code)
+        ) {
+            return false;
         }
 
-        value = value[part];
+        this.currentCode =
+            code;
+
+        saveLanguage(
+            code
+        );
+
+        return true;
     }
 
-    return typeof value === 'string' ? value : fallback;
+    nextLanguage() {
+        const currentIndex =
+            LANGUAGE_CODES.indexOf(
+                this.currentCode
+            );
+
+        const nextIndex =
+            (
+                currentIndex + 1
+            ) %
+            LANGUAGE_CODES.length;
+
+        const nextCode =
+            LANGUAGE_CODES[
+                nextIndex
+            ];
+
+        this.setLanguage(
+            nextCode
+        );
+
+        return this.locale;
+    }
+
+    t(path) {
+        const parts =
+            String(path)
+                .split('.');
+
+        let value =
+            this.locale;
+
+        for (
+            const part of parts
+        ) {
+            if (
+                value === null ||
+                value === undefined
+            ) {
+                return path;
+            }
+
+            value =
+                value[part];
+        }
+
+        return (
+            typeof value === 'string'
+                ? value
+                : path
+        );
+    }
 }
 
-const I18n = Object.freeze({
-    languages: LANGUAGES,
-    languageOrder: LANGUAGE_ORDER,
-    getLanguage,
-    setLanguage,
-    cycleLanguage,
-    getDictionary,
-    get,
-    isSupportedLanguage
-});
+const i18n =
+    new I18n();
 
 export {
+    I18n,
     LANGUAGES,
-    LANGUAGE_ORDER,
-    getLanguage,
-    setLanguage,
-    cycleLanguage,
-    getDictionary,
-    get,
-    isSupportedLanguage
+    LANGUAGE_CODES
 };
 
-export default I18n;
+export default i18n;
