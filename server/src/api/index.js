@@ -69,6 +69,16 @@ const {
     parseRequestUrl
 } = require('./url');
 
+const {
+    getApiRequestPath
+} = require('./request-path');
+
+const {
+    createRouteResult,
+    createNotFoundResult,
+    createSuccessResult
+} = require('./route-result');
+
 module.exports = {
     MAX_BODY_SIZE,
     readJsonBody,
@@ -92,5 +102,9 @@ module.exports = {
     API_PREFIX,
     isApiPath,
     normalizeApiPath,
-    parseRequestUrl
+    parseRequestUrl,
+    getApiRequestPath,
+    createRouteResult,
+    createNotFoundResult,
+    createSuccessResult
 };
