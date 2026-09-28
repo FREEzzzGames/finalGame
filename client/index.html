@@ -1,170 +1,18 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#111318">
-    <meta name="description" content="SYSTeM — NEXUS">
-    <title>SYSTeM — NEXUS</title>
-
-    <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
-
-    <link rel="stylesheet" href="./src/ui/styles/world.css">
-    <link rel="stylesheet" href="./src/ui/styles/chat.css">
-    <link rel="stylesheet" href="./src/ui/styles/chat-widget.css">
-    <link rel="stylesheet" href="./src/ui/styles/lore-widget.css">
-
-    <style>
-        :root {
-            --system-bg: #111318;
-            --system-text: #ffffff;
-            --system-muted: #9ca3af;
-
-            --tg-viewport-height: 100dvh;
-            --tg-viewport-stable-height: 100dvh;
-
-            --tg-safe-top: 0px;
-            --tg-safe-right: 0px;
-            --tg-safe-bottom: 0px;
-            --tg-safe-left: 0px;
-        }
-
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        html {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background: var(--system-bg);
-        }
-
-        body {
-            width: 100%;
-            height: 100%;
-            min-width: 0;
-            min-height: 0;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background: var(--system-bg);
-            color: var(--system-text);
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
-        }
-
-        #app {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            width: 100%;
-            height: var(--tg-viewport-height);
-            min-height: 1px;
-            max-height: none;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            isolation: isolate;
-        }
-
-        .app-root {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .safe-area {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            padding-top: var(--tg-safe-top);
-            padding-right: var(--tg-safe-right);
-            padding-bottom: var(--tg-safe-bottom);
-            padding-left: var(--tg-safe-left);
-        }
-
-        .boot-screen {
-            position: absolute;
-            inset: 0;
-            z-index: 2000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            background: var(--system-bg);
-            color: var(--system-text);
-            text-align: center;
-        }
-
-        .boot-content {
-            width: min(320px, 100%);
-        }
-
-        .boot-title {
-            margin: 0;
-            font-size: 28px;
-            line-height: 1.1;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .boot-status {
-            min-height: 20px;
-            margin: 10px 0 0;
-            color: var(--system-muted);
-            font-size: 14px;
-            line-height: 1.4;
-        }
-
-        .boot-status.is-error {
-            color: #ff8a8a;
-        }
-
-        .app-error {
-            position: absolute;
-            left: 50%;
-            bottom: 24px;
-            width: min(420px, calc(100% - 32px));
-            transform: translateX(-50%);
-            padding: 10px 14px;
-            border: 1px solid rgba(255, 138, 138, 0.35);
-            border-radius: 12px;
-            background: rgba(80, 20, 24, 0.75);
-            color: #ffd5d5;
-            font-size: 12px;
-            line-height: 1.35;
-            text-align: left;
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
-        }
-    </style>
-</head>
-
-<body>
-    <main id="app">
-        <div class="app-root">
-            <section id="boot-screen" class="boot-screen" aria-label="SYSTeM">
-                <div class="boot-content">
-                    <h1 class="boot-title">SYSTeM</h1>
-                    <p id="boot-status" class="boot-status">Loading…</p>
-                </div>
-            </section>
-
-            <div class="safe-area" aria-hidden="true"></div>
-        </div>
-    </main>
-
-    <script type="module" src="./src/app/app.js?v=0.5.0"></script>
-</body>
-</html>
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="theme-color" content="#070b12"><title>SYSTeM — NEXUS</title><style>:root{--bg:#070b12;--p:#0e1725;--p2:#121e30;--line:rgba(130,170,220,.18);--t:#eef6ff;--m:#8291a7;--c:#53e7ff;--v:#9a7cff;--g:#61e6a1;--y:#ffd166;--r:#ff657d}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body,#app{width:100%;height:100%;margin:0;overflow:hidden}body{background:radial-gradient(circle at 50% 15%,#182b48,#080d16 55%,#04060a);color:var(--t);font:12px system-ui,-apple-system,Segoe UI,sans-serif}button,input,select{font:inherit}button{cursor:pointer;color:inherit}.shell{height:100%;display:flex;flex-direction:column}.top{height:62px;flex:0 0 62px;display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:7px 10px;background:rgba(5,9,15,.9);border-bottom:1px solid var(--line);backdrop-filter:blur(14px);z-index:5}.brand{font-weight:950;letter-spacing:.18em}.brand small{display:block;color:var(--m);font-size:7px;letter-spacing:.1em;margin-top:3px}.stats{display:flex;gap:6px}.stat{min-width:70px;text-align:center;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:#0d1725}.stat b{display:block;font-size:11px}.stat span{display:block;color:var(--m);font-size:7px}.tools{display:flex;justify-content:flex-end;gap:6px}.btn,.pill{background:linear-gradient(#17283e,#0c1523);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-weight:800;font-size:9px}.primary{background:linear-gradient(#6e61f4,#4338a7);border-color:#8c80ff}.main{flex:1;min-height:0;overflow:hidden}.screen{height:100%;overflow:auto;padding:14px 12px 82px;scrollbar-width:none}.screen::-webkit-scrollbar{display:none}.nav{height:62px;flex:0 0 62px;display:grid;grid-template-columns:repeat(7,1fr);padding:5px 6px calc(5px + env(safe-area-inset-bottom));gap:4px;background:rgba(5,9,15,.95);border-top:1px solid var(--line);z-index:5}.nav button{border:0;background:transparent;color:#66758b;border-radius:9px;font-size:7px;font-weight:900}.nav button b{display:block;font-size:16px;margin-bottom:2px}.nav button.on{color:#fff;background:rgba(83,231,255,.08);box-shadow:inset 0 0 0 1px rgba(83,231,255,.13)}.wrap{max-width:1100px;margin:auto}.switch{display:flex;justify-content:center;gap:7px;margin-bottom:10px}.world{display:grid;grid-template-columns:1.25fr 1fr;gap:10px}.map,.panel,.card{border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,rgba(16,28,45,.94),rgba(8,14,23,.96));box-shadow:0 18px 50px rgba(0,0,0,.28)}.map{min-height:320px;position:relative;overflow:hidden;background:radial-gradient(circle at 50% 48%,rgba(83,231,255,.18),transparent 24%),radial-gradient(circle,#15253b,#080e17 68%)}.map:before,.map:after{content:"";position:absolute;left:50%;top:50%;border:1px dashed rgba(83,231,255,.18);border-radius:50%;transform:translate(-50%,-50%) rotate(18deg) scaleY(.42)}.map:before{width:290px;height:290px}.map:after{width:190px;height:190px;border-color:rgba(154,124,255,.2);transform:translate(-50%,-50%) rotate(-24deg) scaleY(.45)}.map h1{position:absolute;top:15px;left:17px;margin:0;font-size:17px;letter-spacing:.14em}.map small{position:absolute;top:39px;left:18px;color:var(--m);font-size:7px;letter-spacing:.15em}.core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:104px;height:104px;border-radius:50%;border:0;background:radial-gradient(circle at 32% 24%,#fff,#59e7ff 9%,#4861d8 38%,#17194d 68%,#080a11);box-shadow:0 0 35px rgba(83,231,255,.5);font-size:31px;animation:f 3s ease-in-out infinite}.core span{display:block;font-size:7px;letter-spacing:.2em}.panel{padding:12px}.head{display:flex;justify-content:space-between;color:var(--m);font-size:8px;letter-spacing:.12em}.head b{font-size:15px;color:var(--c)}.districts{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:10px}.district{min-height:60px;text-align:left}.district.sel{border-color:rgba(83,231,255,.45);color:#fff}.district.lock{opacity:.38}.district strong{display:block;font-size:9px}.district em{font-style:normal;color:var(--m);font-size:7px}.builds{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}.building{padding:10px;min-height:116px;display:flex;flex-direction:column;gap:7px}.building .ico{font-size:24px}.building strong{font-size:10px}.building small{color:var(--m);font-size:7px;min-height:25px}.building button{margin-top:auto}.era{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:11px;border:1px solid var(--line);border-radius:12px;background:#09111d}.era small{display:block;color:var(--m);font-size:7px}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.hero{padding:9px;min-height:165px;border:1px solid var(--line);border-radius:14px;background:#0c1523;display:flex;flex-direction:column}.hero .av{height:68px;display:grid;place-items:center;font-size:40px;border-radius:10px;background:radial-gradient(circle,#203750,#0b121e)}.hero strong{font-size:9px;margin-top:7px}.hero small{color:var(--m);font-size:7px;margin-top:3px}.hero.rare{border-color:#3a9fc0}.hero.epic{border-color:#8064c7}.hero.legendary{border-color:#a9873b}.hero.mythic{border-color:#a74459;box-shadow:0 0 20px rgba(255,101,125,.1)}.hero.unknown{opacity:.35;filter:grayscale(1)}.tiny{display:flex;gap:4px;margin-top:auto}.tiny button{flex:1;padding:5px 2px;font-size:6px}.section{max-width:1050px;margin:auto}.title{display:flex;justify-content:space-between;align-items:end;margin-bottom:11px}.title h2{margin:3px 0;font-size:22px}.title small{color:var(--m);font-size:7px;letter-spacing:.16em}.list{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.listing{padding:11px;border:1px solid var(--line);border-radius:13px;background:#0c1523}.listing .seller{color:var(--m);font-size:7px}.listing .lh{margin:10px 0;font-weight:900}.listing .price{color:var(--y);font-weight:950;font-size:14px;margin-bottom:7px}.chat{height:100%;max-width:900px;margin:auto;display:flex;flex-direction:column}.chatlog{flex:1;min-height:220px;overflow:auto;border:1px solid var(--line);border-radius:15px;padding:8px;background:rgba(3,7,12,.65)}.msg{display:flex;gap:8px;padding:7px;border-bottom:1px solid rgba(255,255,255,.04)}.msg .av{width:30px;height:30px;display:grid;place-items:center;background:#17263a;border-radius:8px}.msg b{font-size:8px}.msg span{display:block;margin-top:3px;font-size:10px}.msg small{display:block;color:#5f6d80;font-size:6px;margin-top:2px}.chat form{display:flex;gap:5px;margin-top:7px}.chat input{flex:1;background:#0c1523;color:#fff;border:1px solid var(--line);border-radius:10px;padding:11px}.mission{display:grid;grid-template-columns:45px 1fr auto;gap:10px;align-items:center;padding:13px;margin-bottom:8px}.mission .mi{font-size:27px}.mission h3{margin:0;font-size:12px}.mission p{margin:4px 0 8px;color:var(--m);font-size:8px;line-height:1.5}.bar{height:4px;background:#1a2738;border-radius:4px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--c),var(--v))}.profile{padding:16px;display:flex;align-items:center;gap:12px}.avatar{width:58px;height:58px;display:grid;place-items:center;font-size:30px;background:#1a2a40;border-radius:14px}.profile h2{margin:3px 0}.profile small{color:var(--m);font-size:7px}.online{margin-left:auto;color:var(--g);font-size:7px}.statsgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-top:8px}.statsgrid div{padding:12px 5px;text-align:center;background:#0b1421;border:1px solid var(--line);border-radius:11px}.statsgrid b{display:block;font-size:15px}.statsgrid small{color:var(--m);font-size:6px}.settings{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}.notice{padding:14px;margin-top:9px;color:#8fa2ba;font-size:8px;line-height:1.6}.toast{position:fixed;left:50%;bottom:75px;transform:translate(-50%,15px);opacity:0;pointer-events:none;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:#121d2c;box-shadow:0 15px 40px #0008;font-size:9px;font-weight:900;transition:.18s;z-index:20}.toast.show{opacity:1;transform:translate(-50%,0)}@keyframes f{50%{transform:translate(-50%,-56%) scale(1.03)}}@media(max-width:800px){.top{grid-template-columns:auto 1fr auto}.brand{display:none}.world{grid-template-columns:1fr}.builds{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:repeat(3,1fr)}.list{grid-template-columns:repeat(2,1fr)}.statsgrid{grid-template-columns:repeat(3,1fr)}}@media(max-width:520px){.top{height:56px;flex-basis:56px}.stats .stat:nth-child(3){display:none}.stat{min-width:61px}.screen{padding:10px 8px 76px}.map{min-height:235px}.map:before{width:205px;height:205px}.map:after{width:135px;height:135px}.core{width:82px;height:82px;font-size:25px}.districts{grid-template-columns:repeat(3,1fr)}.district{min-height:56px;padding:7px}.builds{grid-template-columns:1fr 1fr}.grid{grid-template-columns:repeat(2,1fr)}.list{grid-template-columns:1fr}.statsgrid{grid-template-columns:repeat(2,1fr)}.nav{height:58px;flex-basis:58px}.nav button{font-size:6px}.nav button b{font-size:14px}}@media(orientation:landscape) and (max-height:520px){.world{grid-template-columns:1.3fr 1fr}.map{min-height:235px}.builds{grid-template-columns:repeat(5,1fr)}}</style></head><body><div id="app"></div><div id="toast" class="toast"></div><script>
+'use strict';
+const KEY='system-local-online-v3';
+const NPC=[['Nova','🟣'],['Kite','🟢'],['Mara','🔵'],['Byte','🟠'],['Rex','🔴'],['Echo','🟡'],['Flux','⚪'],['Vega','🟤']];
+const HEROES=[['viktor','Viktor Volkov','Common','🧑‍💻'],['anna','Anna Keller','Common','👩‍🔧'],['mike','Mike Carter','Common','🧑‍🚀'],['sofia','Sofia Rossi','Common','👩‍🎨'],['oliver','Oliver Stone','Common','🕵️'],['iryna','Iryna Novak','Rare','👩‍💼'],['max','Max Weber','Rare','🧔'],['leo','Leo Martins','Rare','🧑‍🎤'],['yuki','Yuki Mori','Rare','👩‍💻'],['nina','Nina Petrova','Rare','🧙'],['raven','Raven','Epic','🦹'],['atlas','Atlas','Epic','🧑‍🚒'],['mira','Mira Byte','Epic','👾'],['cass','Cass Vega','Epic','🚀'],['zero','Zero','Epic','🤖'],['director','The Director','Legendary','🎩'],['architect','The Architect','Legendary','🏛️'],['oracle','The Oracle','Legendary','🔮'],['warden','The Warden','Legendary','🛡️'],['nexus','NEXUS Prime','Mythic','🌌']].map(function(x,i){return {id:x[0],name:x[1],rarity:x[2],avatar:x[3],bonus:1+(i%5+1)*.01}});
+const ERA=Array.from({length:12},function(_,i){return {id:i+1,cost:Math.round(250*Math.pow(3.05,i)),need:i*2+1}});
+const DIST={surface:['Core','Tech','Market','Civic','Industrial'],undercity:['Deep Core','Smuggler','Neon','Foundry','Vault']};
+const BT={surface:[['workshop','Workshop','⚙️',35,2],['stadium','Stadium','🏟️',110,5],['studio','Studio','📡',280,11],['commerce','Commerce Hub','🏦',650,24],['research','Research Lab','🧬',1450,52]],undercity:[['workshop','Forge','⚒️',45,3],['stadium','Fight Pit','🥊',130,6],['studio','Signal Den','📡',330,13],['commerce','Black Market','🕶️',780,29],['research','Data Vault','💾',1650,61]]};
+const I18N={ru:{world:'МИР',collection:'КОЛЛЕКЦИЯ',market:'РЫНОК',chat:'GEEK CHAT',missions:'МИССИИ',lore:'ЛОР',profile:'ПРОФИЛЬ',surface:'ПОВЕРХНОСТЬ',undercity:'ПОДЗЕМЬЕ',build:'ПОСТРОИТЬ',upgrade:'УЛУЧШИТЬ',buy:'КУПИТЬ',claim:'ЗАБРАТЬ',save:'СОХРАНИТЬ',reset:'СБРОС',export:'ЭКСПОРТ',import:'ИМПОРТ',government:'ГОСУПРАВЛЕНИЕ',mafia:'МАФИЯ',simulation:'Локальная online-эмуляция активна'},de:{world:'WELT',collection:'SAMMLUNG',market:'MARKT',chat:'GEEK CHAT',missions:'MISSIONEN',lore:'LORE',profile:'PROFIL',surface:'OBERWELT',undercity:'UNTERWELT',build:'BAUEN',upgrade:'VERBESSERN',buy:'KAUFEN',claim:'ABHOLEN',save:'SPEICHERN',reset:'RESET',export:'EXPORT',import:'IMPORT',government:'REGIERUNG',mafia:'MAFIA',simulation:'Lokale Online-Simulation aktiv'},en:{world:'WORLD',collection:'COLLECTION',market:'MARKET',chat:'GEEK CHAT',missions:'MISSIONS',lore:'LORE',profile:'PROFILE',surface:'SURFACE',undercity:'UNDERCITY',build:'BUILD',upgrade:'UPGRADE',buy:'BUY',claim:'CLAIM',save:'SAVE',reset:'RESET',export:'EXPORT',import:'IMPORT',government:'GOVERNMENT',mafia:'MAFIA',simulation:'Local online simulation active'}};
+function t(k){return (I18N[G.s.lang]||I18N.en)[k]||k}
+function city(side){return {district:0,districts:DIST[side].map(function(n,i){return {name:n,level:i?0:1,unlocked:i===0}}),buildings:Object.fromEntries(BT[side].map(function(b,i){return [b[0],{level:i===0?1:0,unlocked:i===0,cost:b[3],income:b[4]}]}))}}
+function fresh(){return {v:3,player:{name:'FREEzzz',xp:0,level:1},eco:{coins:120,energy:100,data:20,influence:5,risk:0,networks:1,last:Date.now()},side:'surface',cities:{surface:city('surface'),undercity:city('undercity')},faction:{surface:'government',undercity:'mafia'},era:1,missions:Array.from({length:12},function(_,i){return {id:i+1,progress:0,target:(i+1)*10,claimed:false}}),owned:['viktor'],duplicates:[],listings:[],history:[],auctions:[],chat:{general:[],market:[],nexus:[]},lore:1,lang:'ru'}};
+const G={s:null,view:'world',chatRoom:'general',timer:null,sim:null,toastTimer:null,load:function(){try{G.s=JSON.parse(localStorage.getItem(KEY))||fresh()}catch(e){G.s=fresh()}},save:function(){G.s.eco.last=Date.now();localStorage.setItem(KEY,JSON.stringify(G.s));G.toast(t('save'),'ok')},income:function(){var n=0;Object.values(G.s.cities).forEach(function(c){Object.values(c.buildings).forEach(function(b){if(b.unlocked)n+=b.income*b.level})});return n*(1+G.s.era*.08)*(1+G.s.eco.influence*.004)*Math.max(.65,1-G.s.eco.risk*.005)/10},earn:function(n){G.s.eco.coins=Math.max(0,G.s.eco.coins+n)},spend:function(n){if(G.s.eco.coins<n){G.toast('Not enough coins','bad');return false}G.s.eco.coins-=n;return true},offline:function(){var dt=Math.min(8*3600,(Date.now()-G.s.eco.last)/1000),n=Math.floor(dt*G.income());if(n>0){G.earn(n);G.toast('+'+n+' offline coins','ok')}G.s.eco.last=Date.now()},action:function(a,p){var s=G.s,c=s.cities[s.side],b,d,e,h,i,n,r;if(a==='tap'){G.earn(1+s.era+Math.floor(s.eco.influence/20));s.player.xp++;s.missions[s.era-1].progress=Math.min(s.missions[s.era-1].target,s.missions[s.era-1].progress+1)}if(a==='switch')s.side=s.side==='surface'?'undercity':'surface';if(a==='district'){d=c.districts[Number(p)];if(d.unlocked){d.level++;s.eco.influence+=2}else{var cost=250+d.level*100;if(G.spend(cost)){d.unlocked=true;d.level=1;s.eco.networks++;s.eco.influence+=3}}}if(a==='build'){b=c.buildings[p];if(b&&!b.unlocked&&G.spend(b.cost)){b.unlocked=true;b.level=1;b.cost=Math.ceil(b.cost*1.65);s.eco.networks++}}if(a==='upgrade'){b=c.buildings[p];if(b&&b.unlocked){var up=Math.ceil(b.cost*(1.3+b.level*.12));if(G.spend(up)){b.level++;b.cost=up;s.eco.influence++;if(s.side==='undercity')s.eco.risk++}}}if(a==='faction'){s.faction[s.side]=p;s.eco.influence+=5}if(a==='era'){e=ERA[s.era-1];if(e&&s.player.xp>=e.need&&s.eco.influence>=e.need&&G.spend(e.cost)&&s.era<12)s.era++}if(a==='pack'){var pack=50+s.era*15;if(G.spend(pack)){var pool=HEROES.filter(function(x){return !s.owned.includes(x.id)});h=(pool.length?pool:HEROES)[Math.floor(Math.random()*(pool.length?pool.length:HEROES.length))];if(s.owned.includes(h.id))s.duplicates.push({id:h.id,time:Date.now()});else s.owned.push(h.id);s.eco.energy=Math.max(0,s.eco.energy-5);G.toast(h.avatar+' '+h.name,'ok')}}if(a==='list'){i=s.owned.indexOf(p);if(i>0){s.owned.splice(i,1);s.listings.push({id:uid(),hero:p,seller:'You',price:40+s.era*20})}}if(a==='buy'){d=s.listings.find(function(x){return x.id===p});if(d&&G.spend(d.price)){s.owned.push(d.hero);s.history.push(d);s.listings=s.listings.filter(function(x){return x.id!==p})}}if(a==='auction'){i=s.owned.indexOf(p);if(i>0){s.owned.splice(i,1);s.auctions.push({id:uid(),hero:p,bid:50+s.era*10,max:500+s.era*100,ends:Date.now()+45000,bidder:'NPC'})}}if(a==='bid'){d=s.auctions.find(function(x){return x.id===p});if(d&&G.spend(d.bid+10)){d.bid+=10;d.bidder='You';d.ends=Date.now()+30000}}if(a==='claim'){d=s.missions.find(function(x){return x.id===Number(p)});if(d&&d.progress>=d.target&&!d.claimed){d.claimed=true;G.earn(100+s.era*30);s.eco.influence+=5}}if(a==='chat'){r=p.room||'general';s.chat[r].push({author:'FREEzzz',avatar:'🧑‍💻',text:p.text,time:Date.now()});if(s.chat[r].length>80)s.chat[r].shift()}if(a==='sim'){for(i=0;i<2;i++){h=HEROES[Math.floor(Math.random()*HEROES.length)];n=NPC[Math.floor(Math.random()*NPC.length)];s.listings.push({id:uid(),hero:h.id,seller:n[0],price:30+Math.floor(Math.random()*220)});s.chat.market.push({author:n[0],avatar:n[1],text:h.avatar+' '+h.name+' entered the market.',time:Date.now()})}s.eco.coins+=Math.floor(G.income()*60)}s.eco.last=Date.now();G.render()},renderTop:function(){document.getElementById('coins').textContent=Math.floor(G.s.eco.coins).toLocaleString();document.getElementById('flow').textContent='+'+G.income().toFixed(1)+'/s';document.getElementById('eraTop').textContent='ERA '+G.s.era},toast:function(x,c){var e=document.getElementById('toast');e.textContent=x;e.className='toast show '+(c||'');clearTimeout(G.toastTimer);G.toastTimer=setTimeout(function(){e.className='toast'},2200)},render:function(){G.renderTop();document.getElementById('screen').innerHTML=G.screen();document.querySelectorAll('.nav button').forEach(function(x){x.classList.toggle('on',x.dataset.v===G.view)})},screen:function(){if(G.view==='collection')return G.collection();if(G.view==='market')return G.market();if(G.view==='chat')return G.chat();if(G.view==='missions')return G.missions();if(G.view==='lore')return G.lore();if(G.view==='profile')return G.profile();return G.world()},world:function(){var s=G.s,c=s.cities[s.side],d=c.districts[c.district];return '<div class="wrap"><div class="switch"><button class="pill" data-a="switch">'+(s.side==='surface'?'☀️ ':'🌑 ')+(s.side==='surface'?t('surface'):t('undercity'))+'</button><button class="pill">'+(s.faction[s.side]==='government'?'🏛️ '+t('government'):'🕶️ '+t('mafia'))+'</button></div><div class="world"><div class="map"><h1>'+s.side.toUpperCase()+'</h1><small>NEXUS // '+d.name.toUpperCase()+'</small><button class="core" data-a="tap">◈<span>ACTIVE</span></button></div><div class="panel"><div class="head"><span>DISTRICT</span><b>LV '+d.level+'</b></div><div class="districts">'+c.districts.map(function(x,i){return '<button class="btn district '+(i===c.district?'sel ':'')+(x.unlocked?'':'lock')+'" data-a="district" data-p="'+i+'">◇<strong>'+x.name+'</strong><em>LV '+x.level+'</em></button>'}).join('')+'</div></div></div><div class="builds">'+BT[s.side].map(function(x){var z=c.buildings[x[0]],cost=z.cost;return '<article class="card building"><div class="ico">'+x[2]+'</div><strong>'+x[1]+'</strong><small>'+(z.unlocked?'LV '+z.level+' · +'+z.income*z.level+'/tick':'LOCKED')+'</small><button class="btn '+(!z.unlocked?'primary':'')+'" data-a="'+(z.unlocked?'upgrade':'build')+'" data-p="'+x[0]+'">'+(z.unlocked?t('upgrade'):t('build'))+' '+cost+'</button></article>'}).join('')+'</div><div class="era"><div><b>ERA '+s.era+'/12</b><small>XP '+s.player.xp+' · INFLUENCE '+s.eco.influence+' · RISK '+s.eco.risk+'</small></div><button class="btn primary" data-a="era">ADVANCE '+(ERA[s.era-1]?ERA[s.era-1].cost:'MAX')+'</button></div></div>'},collection:function(){var s=G.s,own=new Set(s.owned);return '<div class="section"><div class="title"><div><small>GENESIS // COLLECTION</small><h2>'+t('collection')+'</h2></div><button class="btn primary" data-a="pack">PACK '+(50+s.era*15)+'</button></div><div class="grid">'+HEROES.map(function(h){return '<article class="hero '+h.rarity.toLowerCase()+' '+(own.has(h.id)?'':'unknown')+'"><div class="av">'+(own.has(h.id)?h.avatar:'?')+'</div><strong>'+(own.has(h.id)?h.name:'Unknown')+'</strong><small>'+h.rarity+'</small>'+(own.has(h.id)&&s.owned.length>1?'<div class="tiny"><button class="btn" data-a="list" data-p="'+h.id+'">LIST</button><button class="btn" data-a="auction" data-p="'+h.id+'">AUCTION</button></div>':'')+'</article>'}).join('')+'</div></div>'},market:function(){var s=G.s;return '<div class="section"><div class="title"><div><small>LOCAL ONLINE SIMULATION</small><h2>'+t('market')+'</h2></div><button class="btn primary" data-a="sim">SIMULATE</button></div><div class="list">'+s.listings.slice().reverse().map(function(x){var h=HEROES.find(function(y){return y.id===x.hero})||HEROES[0];return '<article class="listing"><div class="seller">🛰️ '+x.seller+'</div><div class="lh">'+h.avatar+' '+h.name+' · '+h.rarity+'</div><div class="price">🪙 '+x.price+'</div><button class="btn" data-a="buy" data-p="'+x.id+'">'+t('buy')+'</button></article>'}).join('')+'<div class="card" style="padding:12px;grid-column:1/-1"><b>AUCTIONS</b><div class="list" style="margin-top:8px">'+s.auctions.map(function(x){var h=HEROES.find(function(y){return y.id===x.hero})||HEROES[0];return '<article class="listing"><div>'+h.avatar+' '+h.name+'</div><div class="price">🪙 '+x.bid+' · '+x.bidder+'</div><button class="btn" data-a="bid" data-p="'+x.id+'">BID +10</button></article>'}).join('')+'</div></div></div></div>'},chat:function(){var s=G.s,r=G.chatRoom,m=s.chat[r]||[];return '<div class="chat"><div class="title"><div><small>NEXUS // VIRTUAL USERS</small><h2>'+t('chat')+'</h2></div><select id="room"><option value="general" '+(r==='general'?'selected':'')+'>#general</option><option value="market" '+(r==='market'?'selected':'')+'>#market</option><option value="nexus" '+(r==='nexus'?'selected':'')+'>#nexus</option></select></div><div class="chatlog">'+m.slice(-60).map(function(x){return '<div class="msg"><div class="av">'+x.avatar+'</div><div><b>'+x.author+'</b><span>'+x.text+'</span><small>'+new Date(x.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+'</small></div></div>'}).join('')+'</div><form id="chatForm"><input maxlength="160" placeholder="Write to local network…"><button class="btn primary">➤</button></form><div style="padding-top:7px;color:var(--m);font-size:7px">'+NPC.map(function(n){return n[1]+' '+n[0]}).join(' · ')+'</div></div>'},missions:function(){var s=G.s;return '<div class="section"><div class="title"><div><small>NEXUS // OPERATIONS</small><h2>'+t('missions')+'</h2></div></div>'+s.missions.slice(0,6).map(function(m){return '<article class="card mission"><div class="mi">⚡</div><div><h3>Operation '+m.id+'</h3><p>Build the network, expand the city and interact with the simulated online economy.</p><div class="bar"><i style="width:'+Math.min(100,m.progress/m.target*100)+'%"></i></div></div>'+(m.claimed?'<b style="color:var(--g)">✓</b>':m.progress>=m.target?'<button class="btn primary" data-a="claim" data-p="'+m.id+'">'+t('claim')+'</button>':'<span style="color:var(--m);font-size:8px">'+m.progress+'/'+m.target+'</span>')+'</article>'}).join('')+'</div>'},lore:function(){var s=G.s;return '<div class="section"><div class="title"><div><small>ARCHIVE // NEXUS</small><h2>'+t('lore')+'</h2></div><b>CHAPTER '+s.lore+'/12</b></div><article class="card" style="padding:25px;min-height:350px;background:radial-gradient(circle at 80% 20%,rgba(154,124,255,.18),transparent 30%),linear-gradient(145deg,#111b2c,#080e17)"><small style="color:var(--c);letter-spacing:.25em">NEXUS</small><h2>The city remembers every transaction.</h2><p style="max-width:650px;color:#9aaabd;line-height:1.8">Surface and Undercity are one economy with two faces. Government stabilizes production and influence; Mafia accelerates underground networks while increasing risk. Missions, collection, market activity and progression feed back into the same player state.</p><div class="statsgrid"><div><b>'+s.eco.networks+'</b><small>NETWORKS</small></div><div><b>'+s.eco.influence+'</b><small>INFLUENCE</small></div><div><b>'+s.eco.risk+'</b><small>RISK</small></div><div><b>'+s.era+'/12</b><small>ERA</small></div></div></article></div>'},profile:function(){var s=G.s;return '<div class="section"><div class="card profile"><div class="avatar">🧑‍💻</div><div><small>LOCAL PLAYER</small><h2>'+s.player.name+'</h2><span>LEVEL '+s.player.level+' · XP '+s.player.xp+'</span></div><b class="online">● ONLINE SIM</b></div><div class="statsgrid"><div><b>'+Math.floor(s.eco.coins).toLocaleString()+'</b><small>COINS</small></div><div><b>'+G.income().toFixed(1)+'</b><small>COIN/S</small></div><div><b>'+s.owned.length+'/20</b><small>HEROES</small></div><div><b>'+s.eco.energy+'</b><small>ENERGY</small></div><div><b>'+s.eco.data+'</b><small>DATA</small></div><div><b>'+s.eco.risk+'</b><small>RISK</small></div></div><div class="settings"><button class="btn" data-a="lang">🌐 '+s.lang.toUpperCase()+'</button><button class="btn" data-a="save">💾 '+t('save')+'</button><button class="btn" data-a="export">⬇ '+t('export')+'</button><button class="btn" data-a="import">⬆ '+t('import')+'</button><button class="btn" data-a="reset">↻ '+t('reset')+'</button></div><div class="card notice"><b style="color:var(--c)">'+t('simulation')+'</b><br>Virtual players, market listings, auctions, chat messages, offline income and state changes are generated locally through one command/state/event flow. No backend is required for development.</div></div>'}};
+function uid(){return Math.random().toString(36).slice(2)+Date.now()}
+function bind(){document.addEventListener('click',function(e){var b=e.target.closest('[data-v]');if(b){G.view=b.dataset.v;G.render();return}b=e.target.closest('[data-a]');if(!b)return;var a=b.dataset.a,p=b.dataset.p;if(a==='lang'){G.s.lang=G.s.lang==='ru'?'de':G.s.lang==='de'?'en':'ru';G.render();return}if(a==='save'){G.save();return}if(a==='reset'){if(confirm('Reset SYSTeM?')){localStorage.removeItem(KEY);location.reload()}return}if(a==='export'){var x=new Blob([JSON.stringify(G.s,null,2)],{type:'application/json'}),u=URL.createObjectURL(x),q=document.createElement('a');q.href=u;q.download='system-save.json';q.click();URL.revokeObjectURL(u);return}if(a==='import'){var i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=function(){var r=new FileReader();r.onload=function(){try{G.s=JSON.parse(r.result);G.save();G.render()}catch(_){G.toast('Invalid save','bad')}};r.readAsText(i.files[0])};i.click();return}G.action(a,p)});document.addEventListener('change',function(e){if(e.target.id==='room'){G.chatRoom=e.target.value;G.render()}});document.addEventListener('submit',function(e){if(e.target.id!=='chatForm')return;e.preventDefault();var i=e.target.querySelector('input');if(i.value.trim()){G.action('chat',{room:G.chatRoom,text:i.value.trim()});i.value='';G.render()}})}
+function nav(){return '<button data-v="world"><b>🌐</b>WORLD</button><button data-v="collection"><b>🧬</b>COLLECT</button><button data-v="market"><b>🪙</b>MARKET</button><button data-v="chat"><b>💬</b>CHAT</button><button data-v="missions"><b>⚡</b>MISSIONS</button><button data-v="lore"><b>📖</b>LORE</button><button data-v="profile"><b>☰</b>PROFILE</button>'}
+function boot(){G.load();G.offline();document.getElementById('app').innerHTML='<div class="shell"><header class="top"><div class="brand">SYSTeM<small>NEXUS // LOCAL ONLINE SIMULATION</small></div><div class="stats"><div class="stat"><b id="coins">0</b><span>🪙 COINS</span></div><div class="stat"><b id="flow">0</b><span>FLOW</span></div><div class="stat"><b id="eraTop">ERA 1</b><span>PROGRESS</span></div></div><div class="tools"><button class="btn" data-a="lang">🌐</button><button class="btn" data-a="save">💾</button></div></header><main class="main"><div id="screen" class="screen"></div></main><nav class="nav">'+nav()+'</nav></div>';bind();G.render();G.timer=setInterval(function(){G.s.eco.coins+=G.income();G.s.eco.last=Date.now();G.renderTop()},1000);G.sim=setInterval(function(){G.action('sim')},7000)}document.addEventListener('DOMContentLoaded',boot);
+</script></body></html>
