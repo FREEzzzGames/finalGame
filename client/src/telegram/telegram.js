@@ -2,514 +2,501 @@
 
 /*
  * FREEzzzGames
- * Application bootstrap
+ * Telegram WebApp adapter
  *
  * Ответственность:
- * - запустить приложение;
- * - инициализировать Telegram;
- * - авторизовать Telegram-пользователя через сервер;
- * - создать Main World;
- * - создать Geek Chat Widget;
- * - передать проверенный Telegram-профиль в Chat;
- * - передать управление игровым модулям.
- *
- * Архитектура:
- *
- * Telegram WebApp
- *      ↓
- * TelegramAdapter
- *      ↓
- * server authentication
- *      ↓
- * playerSession
- *      ↓
- * ┌───────────────┐
- * │               │
- * World        ChatWidget
- *                ↓
- *              ChatUI
- *                ↓
- *           Chat cluster
+ * - обнаружить Telegram WebApp;
+ * - выполнить базовую инициализацию;
+ * - предоставить безопасный доступ к API;
+ * - получить проверенный сервером профиль игрока;
+ * - не смешивать Telegram-логику с игровой логикой.
  *
  * ВАЖНО:
- * Telegram Mini App является основным целевым runtime.
+ * initDataUnsafe НЕ используется для авторизации.
+ * Авторизация и проверка пользователя выполняются сервером.
  *
- * initDataUnsafe НЕ используется.
- * Профиль игрока приходит только после
- * серверной проверки Telegram initData.
+ * API:
+ * - по умолчанию используется публичный FREEzzzGames backend;
+ * - внешний backend может быть задан через
+ *   window.__FREEZZGAMES_API_BASE_URL__.
  */
 
-const APP_VERSION = '0.2.1';
-const MODULE_VERSION = '0.2.3';
+const DEFAULT_API_BASE_URL =
+    'https://universe-fjwj.onrender.com/api';
 
-const appRoot =
-    document.querySelector('#app');
+const TelegramAdapter = (() => {
+    let webApp = null;
+    let initialized = false;
 
-const bootScreen =
-    document.querySelector('#boot-screen');
+    const getApiBaseUrl = () => {
+        if (
+            typeof window !== 'undefined' &&
+            typeof window.__FREEZZGAMES_API_BASE_URL__ === 'string'
+        ) {
+            const value =
+                window.__FREEZZGAMES_API_BASE_URL__.trim();
 
-const bootStatus =
-    document.querySelector('#boot-status');
+            if (value.length > 0) {
+                return value.replace(/\/+$/, '');
+            }
+        }
 
-let world = null;
+        return DEFAULT_API_BASE_URL;
+    };
 
-let chatWidget = null;
+    function detect() {
+        if (
+            typeof window === 'undefined' ||
+            !window.Telegram ||
+            !window.Telegram.WebApp
+        ) {
+            return false;
+        }
 
-let playerSession = null;
+        webApp = window.Telegram.WebApp;
 
-let unsubscribeTelegramViewport = null;
-
-let TelegramAdapter = null;
-let World = null;
-let ChatWidget = null;
-
-function updateBootStatus(message) {
-    if (!bootStatus) {
-        return;
+        return true;
     }
 
-    bootStatus.textContent =
-        message;
-}
+    function init() {
+        if (initialized) {
+            return webApp;
+        }
 
-function applyTelegramViewportHeight() {
-    if (!TelegramAdapter) {
-        return;
-    }
-
-    const height =
-        TelegramAdapter.getViewportHeight();
-
-    if (
-        !height ||
-        !Number.isFinite(height)
-    ) {
-        return;
-    }
-
-    document.documentElement.style.setProperty(
-        '--tg-viewport-height',
-        `${height}px`
-    );
-}
-
-async function loadModules() {
-    const telegramModule =
-        await import(
-            `../telegram/telegram.js?v=${MODULE_VERSION}`
-        );
-
-    const worldModule =
-        await import(
-            `../world/world.js?v=${MODULE_VERSION}`
-        );
-
-    const chatWidgetModule =
-        await import(
-            `../chat/chat-widget.js?v=${MODULE_VERSION}`
-        );
-
-    TelegramAdapter =
-        telegramModule.default;
-
-    World =
-        worldModule.default;
-
-    ChatWidget =
-        chatWidgetModule.default;
-
-    if (
-        !TelegramAdapter ||
-        !World ||
-        !ChatWidget
-    ) {
-        throw new Error(
-            '[FREEzzzGames] Required application modules were not loaded.'
-        );
-    }
-}
-
-function initializeTelegram() {
-    try {
-        if (!TelegramAdapter) {
+        if (!detect()) {
             return null;
         }
 
-        const telegram =
-            TelegramAdapter.init();
-
-        if (telegram) {
-            applyTelegramViewportHeight();
-
-            unsubscribeTelegramViewport =
-                TelegramAdapter.onViewportChanged(
-                    () => {
-                        applyTelegramViewportHeight();
-
-                        /*
-                         * Telegram viewport changes are not guaranteed
-                         * to produce a browser resize event.
-                         */
-                        window.dispatchEvent(
-                            new Event('resize')
-                        );
-                    }
-                );
-        }
-
-        return telegram;
-    } catch (error) {
-        console.warn(
-            '[FREEzzzGames] Telegram initialization warning:',
-            error
-        );
-
-        return null;
-    }
-}
-
-async function authenticateTelegram() {
-    if (!TelegramAdapter) {
-        return null;
-    }
-
-    /*
-     * За пределами Telegram авторизация
-     * не требуется для локального/веб-тестирования.
-     */
-    if (!TelegramAdapter.isAvailable()) {
-        return null;
-    }
-
-    const session =
-        await TelegramAdapter.authenticate();
-
-    if (
-        !session ||
-        !session.authenticated
-    ) {
-        throw new Error(
-            `[FREEzzzGames] Telegram authentication failed: ${
-                session && session.error
-                    ? session.error
-                    : 'UNKNOWN_ERROR'
-            }`
-        );
-    }
-
-    return session;
-}
-
-function createWorldMount() {
-    if (!appRoot) {
-        throw new Error(
-            '[FREEzzzGames] Application root #app was not found.'
-        );
-    }
-
-    const mount =
-        document.createElement('div');
-
-    mount.id =
-        'world-mount';
-
-    mount.className =
-        'world-mount';
-
-    appRoot.appendChild(
-        mount
-    );
-
-    return mount;
-}
-
-function createChatMount() {
-    if (!appRoot) {
-        throw new Error(
-            '[FREEzzzGames] Application root #app was not found.'
-        );
-    }
-
-    const mount =
-        document.createElement('div');
-
-    mount.id =
-        'chat-widget-mount';
-
-    mount.className =
-        'chat-widget-mount';
-
-    appRoot.appendChild(
-        mount
-    );
-
-    return mount;
-}
-
-function startWorld() {
-    if (!World) {
-        throw new Error(
-            '[FREEzzzGames] World module is not loaded.'
-        );
-    }
-
-    const mount =
-        createWorldMount();
-
-    world =
-        new World(mount);
-
-    return world;
-}
-
-function getVerifiedChatAuthor() {
-    if (
-        !playerSession ||
-        !playerSession.authenticated ||
-        !playerSession.profile
-    ) {
-        return '';
-    }
-
-    const profile =
-        playerSession.profile;
-
-    /*
-     * Приоритет:
-     *
-     * username
-     * ↓
-     * firstName + lastName
-     * ↓
-     * пустое значение
-     *
-     * Все значения приходят от сервера
-     * после проверки Telegram initData.
-     */
-    if (
-        typeof profile.username === 'string' &&
-        profile.username.trim().length > 0
-    ) {
-        return profile.username.trim();
-    }
-
-    const firstName =
-        typeof profile.firstName === 'string'
-            ? profile.firstName.trim()
-            : '';
-
-    const lastName =
-        typeof profile.lastName === 'string'
-            ? profile.lastName.trim()
-            : '';
-
-    return [
-        firstName,
-        lastName
-    ]
-        .filter(Boolean)
-        .join(' ');
-}
-
-function startChatWidget() {
-    if (!ChatWidget) {
-        throw new Error(
-            '[FREEzzzGames] ChatWidget module is not loaded.'
-        );
-    }
-
-    const mount =
-        createChatMount();
-
-    const author =
-        getVerifiedChatAuthor();
-
-    chatWidget =
-        new ChatWidget({
-            author
-        });
-
-    const mounted =
-        chatWidget.mountTo(
-            mount
-        );
-
-    if (!mounted) {
-        throw new Error(
-            '[FREEzzzGames] Geek Chat Widget could not be mounted.'
-        );
-    }
-
-    return chatWidget;
-}
-
-function applyPlayerSession() {
-    if (!appRoot) {
-        return;
-    }
-
-    if (
-        !playerSession ||
-        !playerSession.authenticated
-    ) {
-        appRoot.dataset.telegramAuthenticated =
-            'false';
-
-        return;
-    }
-
-    appRoot.dataset.telegramAuthenticated =
-        'true';
-
-    if (
-        playerSession.profile &&
-        playerSession.profile.telegramUserId !== undefined
-    ) {
-        appRoot.dataset.telegramUserId =
-            String(
-                playerSession.profile.telegramUserId
-            );
-    }
-
-    if (
-        playerSession.profile &&
-        typeof playerSession.profile.username === 'string'
-    ) {
-        appRoot.dataset.telegramUsername =
-            playerSession.profile.username;
-    }
-}
-
-function hideBootScreen() {
-    if (!bootScreen) {
-        return;
-    }
-
-    bootScreen.remove();
-}
-
-async function startApp() {
-    if (!appRoot) {
-        throw new Error(
-            '[FREEzzzGames] Application root #app was not found.'
-        );
-    }
-
-    /*
-     * Загружаем игровые модули с новой версией URL.
-     */
-    await loadModules();
-
-    const telegram =
-        initializeTelegram();
-
-    if (telegram) {
-        updateBootStatus(
-            'FREEzzzGames'
-        );
-
-        /*
-         * Telegram является авторитетным источником
-         * идентификации пользователя.
-         *
-         * World и Chat запускаются только после
-         * успешной серверной проверки initData.
-         */
-        playerSession =
-            await authenticateTelegram();
-
-        applyPlayerSession();
-    } else {
-        updateBootStatus(
-            'FREEzzzGames'
-        );
-
-        console.info(
-            '[FREEzzzGames] Telegram WebApp API is not available. ' +
-            'Running in browser mode.'
-        );
-
-        appRoot.dataset.telegramAuthenticated =
-            'false';
-    }
-
-    appRoot.dataset.appVersion =
-        APP_VERSION;
-
-    appRoot.dataset.initialized =
-        'true';
-
-    /*
-     * World остаётся независимым модулем.
-     */
-    startWorld();
-
-    /*
-     * Geek Chat получает только подтверждённое
-     * сервером имя пользователя.
-     */
-    startChatWidget();
-
-    hideBootScreen();
-
-    /*
-     * После создания World и Chat даём браузеру
-     * закончить layout.
-     *
-     * Особенно важно для Telegram WebApp,
-     * где viewport может измениться уже после
-     * первоначального запуска.
-     */
-    requestAnimationFrame(
-        () => {
-            requestAnimationFrame(
-                () => {
-                    window.dispatchEvent(
-                        new Event('resize')
-                    );
-                }
-            );
-        }
-    );
-
-    console.info(
-        `[FREEzzzGames] App initialized. Version: ${APP_VERSION}`
-    );
-
-    if (playerSession) {
-        console.info(
-            '[FREEzzzGames] Telegram player authenticated.',
-            playerSession.profile
-        );
-    }
-}
-
-startApp()
-    .catch(
-        (error) => {
+        try {
+            if (typeof webApp.ready === 'function') {
+                webApp.ready();
+            }
+
+            initialized = true;
+
+            return webApp;
+        } catch (error) {
             console.error(
-                '[FREEzzzGames] Application initialization failed:',
+                '[FREEzzzGames] Telegram initialization failed:',
                 error
             );
 
-            updateBootStatus(
-                'FREEzzzGames'
-            );
+            return null;
         }
-    );
+    }
 
-export {
-    startApp
-};
+    function expand() {
+        if (
+            !webApp ||
+            typeof webApp.expand !== 'function'
+        ) {
+            return false;
+        }
 
-export {
-    world
-};
+        try {
+            webApp.expand();
 
-export {
-    chatWidget
-};
+            return true;
+        } catch (error) {
+            console.warn(
+                '[FREEzzzGames] Telegram expand warning:',
+                error
+            );
 
-export {
-    playerSession
-};
+            return false;
+        }
+    }
+
+    function isAvailable() {
+        /*
+         * Telegram WebApp JavaScript API может быть загружен
+         * и в обычном браузере, потому что telegram-web-app.js
+         * подключён глобально в index.html.
+         *
+         * Поэтому самого наличия window.Telegram.WebApp
+         * недостаточно для определения реального Telegram runtime.
+         *
+         * Для авторизации считаем Telegram доступным только
+         * если Telegram передал непустой initData.
+         */
+        if (!webApp && !detect()) {
+            return false;
+        }
+
+        return getInitData().length > 0;
+    }
+
+    function isInitialized() {
+        return initialized;
+    }
+
+    function getWebApp() {
+        return webApp;
+    }
+
+    function getInitData() {
+        if (
+            !webApp ||
+            typeof webApp.initData !== 'string'
+        ) {
+            return '';
+        }
+
+        return webApp.initData;
+    }
+
+    async function authenticate() {
+        const initData =
+            getInitData();
+
+        if (!initData) {
+            return {
+                authenticated: false,
+                profile: null,
+                state: null,
+                error: 'TELEGRAM_INIT_DATA_MISSING'
+            };
+        }
+
+        const apiBaseUrl =
+            getApiBaseUrl();
+
+        const stateUrl =
+            `${apiBaseUrl}/state`;
+
+        try {
+            const response =
+                await fetch(
+                    stateUrl,
+                    {
+                        method: 'GET',
+
+                        headers: {
+                            'x-telegram-init-data':
+                                initData,
+
+                            'Accept':
+                                'application/json'
+                        },
+
+                        /*
+                         * Для отдельного backend
+                         * авторизация выполняется через
+                         * Telegram initData header.
+                         *
+                         * Cookies backend здесь
+                         * не являются источником
+                         * идентификации пользователя.
+                         */
+                        credentials:
+                            'omit'
+                    }
+                );
+
+            let payload = null;
+
+            try {
+                payload =
+                    await response.json();
+            } catch {
+                payload = null;
+            }
+
+            if (!response.ok) {
+                return {
+                    authenticated: false,
+                    profile: null,
+                    state: null,
+                    error:
+                        payload &&
+                        typeof payload.error === 'string'
+                            ? payload.error
+                            : `HTTP_${response.status}`
+                };
+            }
+
+            if (
+                !payload ||
+                typeof payload !== 'object'
+            ) {
+                return {
+                    authenticated: false,
+                    profile: null,
+                    state: null,
+                    error: 'INVALID_SERVER_RESPONSE'
+                };
+            }
+
+            /*
+             * Server API response:
+             *
+             * {
+             *     ok: true,
+             *     data: {
+             *         profile: {},
+             *         state: {}
+             *     }
+             * }
+             *
+             * Поддерживаем только серверный
+             * формат ответа.
+             */
+            const data =
+                payload.data;
+
+            if (
+                !data ||
+                typeof data !== 'object'
+            ) {
+                return {
+                    authenticated: false,
+                    profile: null,
+                    state: null,
+                    error: 'INVALID_SERVER_RESPONSE_DATA'
+                };
+            }
+
+            return {
+                authenticated: true,
+
+                profile:
+                    data.profile || null,
+
+                state:
+                    data.state || null,
+
+                error: null
+            };
+        } catch (error) {
+            console.error(
+                '[FREEzzzGames] Telegram authentication request failed:',
+                error
+            );
+
+            return {
+                authenticated: false,
+                profile: null,
+                state: null,
+                error: 'TELEGRAM_AUTH_REQUEST_FAILED'
+            };
+        }
+    }
+
+    function getVersion() {
+        if (!webApp) {
+            return null;
+        }
+
+        return webApp.version || null;
+    }
+
+    function getPlatform() {
+        if (!webApp) {
+            return null;
+        }
+
+        return webApp.platform || null;
+    }
+
+    function getColorScheme() {
+        if (!webApp) {
+            return null;
+        }
+
+        return webApp.colorScheme || null;
+    }
+
+    function isExpanded() {
+        if (!webApp) {
+            return false;
+        }
+
+        return webApp.isExpanded === true;
+    }
+
+    function getViewportHeight() {
+        if (!webApp) {
+            return null;
+        }
+
+        const height = Number(
+            webApp.viewportHeight
+        );
+
+        return Number.isFinite(height) && height > 0
+            ? height
+            : null;
+    }
+
+    function getViewportStableHeight() {
+        if (!webApp) {
+            return null;
+        }
+
+        const height = Number(
+            webApp.viewportStableHeight
+        );
+
+        return Number.isFinite(height) && height > 0
+            ? height
+            : null;
+    }
+
+    function onViewportChanged(callback) {
+        if (
+            !webApp ||
+            typeof callback !== 'function' ||
+            typeof webApp.onEvent !== 'function'
+        ) {
+            return () => {};
+        }
+
+        /*
+         * Telegram передаёт объект события:
+         *
+         * {
+         *     isStateStable: boolean
+         * }
+         *
+         * Не читаем isStateStable из webApp —
+         * это не значение события.
+         */
+        const handler = (event) => {
+            const viewportEvent =
+                event && typeof event === 'object'
+                    ? event
+                    : {};
+
+            callback({
+                height:
+                    getViewportHeight(),
+
+                stableHeight:
+                    getViewportStableHeight(),
+
+                isStateStable:
+                    viewportEvent.isStateStable === true
+            });
+        };
+
+        try {
+            webApp.onEvent(
+                'viewportChanged',
+                handler
+            );
+
+            return () => {
+                try {
+                    if (
+                        typeof webApp.offEvent === 'function'
+                    ) {
+                        webApp.offEvent(
+                            'viewportChanged',
+                            handler
+                        );
+                    }
+                } catch (error) {
+                    console.warn(
+                        '[FREEzzzGames] Telegram viewport listener cleanup error:',
+                        error
+                    );
+                }
+            };
+        } catch (error) {
+            console.warn(
+                '[FREEzzzGames] Telegram viewport listener error:',
+                error
+            );
+
+            return () => {};
+        }
+    }
+
+    function setHeaderColor(color) {
+        if (
+            !webApp ||
+            typeof webApp.setHeaderColor !== 'function'
+        ) {
+            return false;
+        }
+
+        try {
+            webApp.setHeaderColor(color);
+
+            return true;
+        } catch (error) {
+            console.warn(
+                '[FREEzzzGames] Telegram header color error:',
+                error
+            );
+
+            return false;
+        }
+    }
+
+    function setBackgroundColor(color) {
+        if (
+            !webApp ||
+            typeof webApp.setBackgroundColor !== 'function'
+        ) {
+            return false;
+        }
+
+        try {
+            webApp.setBackgroundColor(color);
+
+            return true;
+        } catch (error) {
+            console.warn(
+                '[FREEzzzGames] Telegram background color error:',
+                error
+            );
+
+            return false;
+        }
+    }
+
+    function close() {
+        if (
+            !webApp ||
+            typeof webApp.close !== 'function'
+        ) {
+            return false;
+        }
+
+        try {
+            webApp.close();
+
+            return true;
+        } catch (error) {
+            console.warn(
+                '[FREEzzzGames] Telegram close error:',
+                error
+            );
+
+            return false;
+        }
+    }
+
+    return Object.freeze({
+        init,
+        expand,
+        isAvailable,
+        isInitialized,
+        getWebApp,
+        getInitData,
+        authenticate,
+        getVersion,
+        getPlatform,
+        getColorScheme,
+        isExpanded,
+        getViewportHeight,
+        getViewportStableHeight,
+        onViewportChanged,
+        setHeaderColor,
+        setBackgroundColor,
+        close
+    });
+})();
+
+export default TelegramAdapter;
