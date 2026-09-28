@@ -650,6 +650,187 @@
     cursor: pointer;
 }
 
+
+.world-main-workshop,
+.world-main-stadium,
+.world-main-studio,
+.world-main-shopping {
+    overflow: visible;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(225, 220, 202, .98),
+            rgba(91, 87, 75, .98)
+        );
+
+    border:
+        18px solid rgba(48, 48, 43, .96);
+
+    border-radius: 34px 34px 18px 18px;
+
+    box-shadow:
+        0 36px 58px rgba(0, 0, 0, .34),
+        inset 0 -42px 0 rgba(42, 41, 37, .22);
+
+    color: #f7f1df;
+
+    opacity: .82;
+
+    filter: saturate(.82);
+
+    transform:
+        translate(-50%, -50%)
+        scale(.96);
+}
+
+.world-main-workshop::before,
+.world-main-stadium::before,
+.world-main-studio::before,
+.world-main-shopping::before {
+    content: "";
+
+    position: absolute;
+
+    left: -22px;
+    right: -22px;
+    top: -116px;
+
+    height: 142px;
+
+    border-radius: 55% 55% 20% 20%;
+
+    background:
+        linear-gradient(
+            135deg,
+            #454b4a,
+            #202423
+        );
+
+    border:
+        16px solid rgba(35, 36, 34, .96);
+
+    box-shadow:
+        0 22px 34px rgba(0, 0, 0, .28);
+}
+
+.world-main-workshop::after,
+.world-main-stadium::after,
+.world-main-studio::after,
+.world-main-shopping::after {
+    content: "";
+
+    position: absolute;
+
+    left: 54px;
+    right: 54px;
+    bottom: 56px;
+
+    height: 118px;
+
+    border-radius: 16px;
+
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(62, 100, 115, .98) 0 56px,
+            rgba(223, 199, 151, .96) 56px 78px
+        );
+
+    border:
+        14px solid rgba(52, 50, 44, .8);
+}
+
+.world-main-stadium {
+    background:
+        linear-gradient(
+            180deg,
+            #d4d9d4,
+            #626866
+        );
+}
+
+.world-main-stadium::before {
+    border-radius: 50%;
+    height: 126px;
+    background:
+        radial-gradient(
+            ellipse at center,
+            #8ba1a2 0 45%,
+            #394346 46% 100%
+        );
+}
+
+.world-main-studio {
+    background:
+        linear-gradient(
+            180deg,
+            #8c9db0,
+            #394958
+        );
+}
+
+.world-main-studio::before {
+    background:
+        linear-gradient(
+            135deg,
+            #5d7c95,
+            #263947
+        );
+}
+
+.world-main-shopping {
+    background:
+        linear-gradient(
+            180deg,
+            #d2b879,
+            #725a32
+        );
+}
+
+.world-main-shopping::before {
+    background:
+        linear-gradient(
+            135deg,
+            #b9954e,
+            #4e3d22
+        );
+}
+
+.world-main-shopping::after {
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(42, 68, 73, .98) 0 54px,
+            rgba(239, 214, 159, .98) 54px 78px
+        );
+}
+
+.world-main-workshop .locked-icon,
+.world-main-stadium .locked-icon,
+.world-main-studio .locked-icon,
+.world-main-shopping .locked-icon {
+    position: relative;
+    z-index: 3;
+}
+
+.world-main-workshop .locked-title,
+.world-main-stadium .locked-title,
+.world-main-studio .locked-title,
+.world-main-shopping .locked-title,
+.world-main-workshop .locked-price,
+.world-main-stadium .locked-price,
+.world-main-studio .locked-price,
+.world-main-shopping .locked-price,
+.world-main-workshop .locked-state,
+.world-main-stadium .locked-state,
+.world-main-studio .locked-state,
+.world-main-shopping .locked-state {
+    position: relative;
+    z-index: 4;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, .8);
+}
+
 .world-locked-upgrade.is-affordable {
     background:
         rgba(30, 47, 76, .94);
@@ -793,8 +974,26 @@
     }
 
     .world-farm {
-        width: 154px;
-        min-height: 134px;
+        width: 500px;
+        min-height: 420px;
+    }
+
+    .world-support-building {
+        width: 240px;
+        height: 195px;
+    }
+
+    .world-district-label {
+        font-size: 58px;
+        padding: 24px 42px;
+    }
+
+    .world-main-workshop,
+    .world-main-stadium,
+    .world-main-studio,
+    .world-main-shopping {
+        width: 410px;
+        min-height: 370px;
     }
 
     .object-icon {
