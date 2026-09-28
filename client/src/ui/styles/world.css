@@ -96,8 +96,8 @@
     left: 0;
     top: 0;
 
-    width: 2400px;
-    height: 3600px;
+    width: 24000px;
+    height: 36000px;
 
     transform-origin: 0 0;
 
@@ -107,6 +107,178 @@
         linear-gradient(180deg, rgba(77, 139, 255, .08), rgba(10, 15, 30, .18)),
         repeating-linear-gradient(0deg, transparent 0 139px, rgba(93, 132, 210, .08) 140px 141px),
         repeating-linear-gradient(90deg, transparent 0 139px, rgba(93, 132, 210, .08) 140px 141px);
+}
+
+
+.world-map-art {
+    position: absolute;
+    inset: 0;
+
+    width: 24000px;
+    height: 36000px;
+
+    display: block;
+
+    pointer-events: none;
+    user-select: none;
+}
+
+.world-support-building {
+    position: absolute;
+
+    width: 260px;
+    height: 210px;
+
+    transform: translate(-50%, -50%);
+
+    border-radius: 18px 18px 10px 10px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(238, 232, 211, .98) 0 68%,
+            rgba(166, 151, 121, .98) 69% 100%
+        );
+
+    border:
+        12px solid rgba(82, 69, 54, .92);
+
+    box-shadow:
+        0 24px 34px rgba(0, 0, 0, .28),
+        inset 0 -22px 0 rgba(69, 57, 43, .16);
+
+    pointer-events: none;
+}
+
+.world-support-building::before {
+    content: "";
+
+    position: absolute;
+
+    left: -28px;
+    right: -28px;
+    top: -70px;
+
+    height: 92px;
+
+    border-radius: 55% 55% 18% 18%;
+
+    background:
+        linear-gradient(
+            135deg,
+            #7b4f38 0%,
+            #503226 48%,
+            #30231c 100%
+        );
+
+    border:
+        10px solid rgba(54, 40, 31, .95);
+
+    box-shadow:
+        0 12px 20px rgba(0, 0, 0, .26);
+}
+
+.world-support-building::after {
+    content: "";
+
+    position: absolute;
+
+    left: 22px;
+    right: 22px;
+    bottom: 26px;
+
+    height: 54px;
+
+    border-radius: 8px;
+
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(58, 91, 106, .96) 0 32px,
+            rgba(214, 196, 151, .95) 32px 46px
+        );
+
+    border: 8px solid rgba(66, 54, 42, .76);
+}
+
+.support-2 {
+    width: 300px;
+    height: 230px;
+    border-radius: 12px;
+    background:
+        linear-gradient(
+            180deg,
+            rgba(190, 197, 198, .98) 0 72%,
+            rgba(104, 111, 112, .98) 73% 100%
+        );
+}
+
+.support-2::before {
+    background:
+        linear-gradient(
+            135deg,
+            #5c6263,
+            #343839
+        );
+}
+
+.support-3 {
+    width: 220px;
+    height: 280px;
+    border-radius: 30px 30px 8px 8px;
+    background:
+        linear-gradient(
+            180deg,
+            rgba(215, 203, 174, .98) 0 74%,
+            rgba(126, 104, 77, .98) 75% 100%
+        );
+}
+
+.support-3::before {
+    top: -48px;
+    height: 70px;
+    left: -18px;
+    right: -18px;
+    background:
+        linear-gradient(
+            135deg,
+            #87563d,
+            #4a3024
+        );
+}
+
+.world-district-label {
+    position: absolute;
+
+    transform: translate(-50%, -50%);
+
+    padding: 34px 72px;
+
+    border-radius: 70px;
+
+    background:
+        rgba(18, 25, 20, .72);
+
+    border:
+        7px solid rgba(222, 202, 158, .42);
+
+    box-shadow:
+        0 18px 38px rgba(0, 0, 0, .28);
+
+    color: rgba(255, 246, 220, .92);
+
+    font:
+        800 86px/1 system-ui,
+        sans-serif;
+
+    letter-spacing: .14em;
+
+    white-space: nowrap;
+
+    pointer-events: none;
+
+    text-shadow:
+        0 4px 14px rgba(0, 0, 0, .65);
 }
 
 .world-hud {
@@ -384,8 +556,8 @@
 .world-farm {
     display: flex;
 
-    width: 164px;
-    min-height: 142px;
+    width: 520px;
+    min-height: 440px;
 
     padding: 18px;
 
@@ -419,7 +591,7 @@
 .object-icon {
     display: block;
 
-    font-size: 48px;
+    font-size: 150px;
 
     line-height: 1;
 }
@@ -427,7 +599,7 @@
 .object-title {
     display: block;
 
-    font-size: 15px;
+    font-size: 46px;
     font-weight: 800;
 
     letter-spacing: 0.08em;
@@ -436,7 +608,7 @@
 .object-level {
     display: block;
 
-    font-size: 12px;
+    font-size: 34px;
     font-weight: 700;
 
     opacity: 0.7;
@@ -445,8 +617,8 @@
 .world-locked-upgrade {
     display: flex;
 
-    width: 132px;
-    min-height: 126px;
+    width: 430px;
+    min-height: 390px;
 
     padding: 12px;
 
@@ -529,7 +701,7 @@
 .locked-icon {
     display: block;
 
-    font-size: 34px;
+    font-size: 110px;
 
     line-height: 1;
 
@@ -549,7 +721,7 @@
 .locked-title {
     display: block;
 
-    font-size: 11px;
+    font-size: 34px;
     font-weight: 800;
 
     letter-spacing: 0.06em;
@@ -560,7 +732,7 @@
 .locked-price {
     display: block;
 
-    font-size: 10px;
+    font-size: 30px;
     font-weight: 700;
 
     opacity: 0.72;
