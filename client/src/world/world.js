@@ -19,8 +19,21 @@ import storage from '../app/storage.js';
 import i18n from '../i18n/i18n.js';
 import NexusWorldIntegration from '../nexus/world-integration.js';
 
-const WORLD_WIDTH = 2400;
-const WORLD_HEIGHT = 3600;
+const WORLD_WIDTH = 24000;
+const WORLD_HEIGHT = 36000;
+
+const DISTRICT_LAYOUT = Object.freeze([
+    { id: 'north-harbor', label: 'NORTH HARBOR', x: 4800, y: 7200, main: 'stadium' },
+    { id: 'old-town', label: 'OLD TOWN', x: 12000, y: 7200, main: 'studio' },
+    { id: 'industrial', label: 'INDUSTRIAL', x: 19200, y: 7200, main: 'workshop' },
+    { id: 'green-valley', label: 'GREEN VALLEY', x: 7200, y: 24600, main: 'farm' },
+    { id: 'market-district', label: 'MARKET DISTRICT', x: 16800, y: 24600, main: 'shopping' }
+]);
+
+const SUPPORT_OFFSETS = Object.freeze([
+    [-1050, -850], [0, -1150], [1050, -850],
+    [-1150, 650], [0, 1050], [1150, 650]
+]);
 
 const COIN_REWARD = 1;
 const FARM_BASE_COST = 10;
@@ -60,49 +73,13 @@ const SPHERE_RADIUS_MULTIPLIER = 1.5;
 const SPHERE_MIN_SCALE = 0.50;
 
 const BUILDINGS = Object.freeze({
-    workshop: {
-        id: 'workshop',
-        icon: '⚡',
-        cost: 75,
-        passiveIncome: 1,
-        passiveInterval: 10000,
-        x: WORLD_WIDTH / 2 - 240,
-        y: WORLD_HEIGHT / 2
-    },
-
-    stadium: {
-        id: 'stadium',
-        icon: '🚇',
-        cost: 400,
-        passiveIncome: 0,
-        passiveInterval: 0,
-        x: WORLD_WIDTH / 2 + 240,
-        y: WORLD_HEIGHT / 2
-    },
-
-    studio: {
-        id: 'studio',
-        icon: '🌐',
-        cost: 2000,
-        passiveIncome: 0,
-        passiveInterval: 0,
-        x: WORLD_WIDTH / 2,
-        y: WORLD_HEIGHT / 2 - 220
-    },
-
-    shopping: {
-        id: 'shopping',
-        icon: '🏦',
-        cost: 10000,
-        passiveIncome: 0,
-        passiveInterval: 0,
-        x: WORLD_WIDTH / 2,
-        y: WORLD_HEIGHT / 2 + 220
-    }
+    workshop: { id: 'workshop', icon: '⚡', cost: 75, passiveIncome: 1, passiveInterval: 10000, x: 19200, y: 7200 },
+    stadium: { id: 'stadium', icon: '🚇', cost: 400, passiveIncome: 0, passiveInterval: 0, x: 4800, y: 7200 },
+    studio: { id: 'studio', icon: '🌐', cost: 2000, passiveIncome: 0, passiveInterval: 0, x: 12000, y: 7200 },
+    shopping: { id: 'shopping', icon: '🏦', cost: 10000, passiveIncome: 0, passiveInterval: 0, x: 16800, y: 24600 }
 });
 
-const SIDE_BUILDINGS_DISTANCE =
-    Math.abs(BUILDINGS.workshop.x - BUILDINGS.stadium.x);
+const SIDE_BUILDINGS_DISTANCE = 2400;
 
 const SPHERE_RADIUS =
     SIDE_BUILDINGS_DISTANCE * SPHERE_RADIUS_MULTIPLIER;
@@ -354,36 +331,80 @@ class World {
         this.scene.innerHTML = '';
         objects.clear();
 
+        this.createMapArt();
         this.createBuildingElement('farm', '🏙️', 150, 130);
-
-        objects.add({
-            id: 'farm',
-            type: 'building',
-            x: WORLD_WIDTH / 2,
-            y: WORLD_HEIGHT / 2,
-            layer: 'buildings',
-            data: { level: this.farmLevel }
-        });
+        objects.add({ id: 'farm', type: 'building', x: 7200, y: 24600, layer: 'buildings', data: { level: this.farmLevel } });
 
         Object.values(BUILDINGS).forEach(building => {
-            this.createBuildingElement(
-                building.id,
-                building.icon,
-                118,
-                116
-            );
+            this.createBuildingElement(building.id, building.icon, 118, 116);
+            objects.add({ id: building.id, type: 'building', x: building.x, y: building.y, layer: 'buildings', data: { level: this.buildings[building.id] ? 1 : 0, cost: building.cost } });
+        });
 
-            objects.add({
-                id: building.id,
-                type: 'building',
-                x: building.x,
-                y: building.y,
-                layer: 'buildings',
-                data: {
-                    level: this.buildings[building.id] ? 1 : 0,
-                    cost: building.cost
-                }
+        this.createSupportBuildings();
+    }
+
+    createMapArt() {
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.classList.add('world-map-art');
+        svg.setAttribute('viewBox', '0 0 ' + WORLD_WIDTH + ' ' + WORLD_HEIGHT);
+        svg.setAttribute('aria-hidden', 'true');
+
+        const defs = document.createElementNS(svgNS, 'defs');
+        const land = document.createElementNS(svgNS, 'linearGradient');
+        land.id = 'land-gradient'; land.setAttribute('x1', '0'); land.setAttribute('y1', '0'); land.setAttribute('x2', '1'); land.setAttribute('y2', '1');
+        const landA = document.createElementNS(svgNS, 'stop'); landA.setAttribute('offset', '0'); landA.setAttribute('stop-color', '#30452f');
+        const landB = document.createElementNS(svgNS, 'stop'); landB.setAttribute('offset', '1'); landB.setAttribute('stop-color', '#17251d');
+        land.append(landA, landB);
+        const water = document.createElementNS(svgNS, 'linearGradient');
+        water.id = 'water-gradient'; water.setAttribute('x1', '0'); water.setAttribute('y1', '0'); water.setAttribute('x2', '1'); water.setAttribute('y2', '1');
+        const waterA = document.createElementNS(svgNS, 'stop'); waterA.setAttribute('offset', '0'); waterA.setAttribute('stop-color', '#244d62');
+        const waterB = document.createElementNS(svgNS, 'stop'); waterB.setAttribute('offset', '1'); waterB.setAttribute('stop-color', '#102b3b');
+        water.append(waterA, waterB); defs.append(land, water); svg.append(defs);
+
+        const background = document.createElementNS(svgNS, 'rect');
+        background.setAttribute('width', WORLD_WIDTH); background.setAttribute('height', WORLD_HEIGHT); background.setAttribute('fill', 'url(#land-gradient)'); svg.append(background);
+
+        const river = document.createElementNS(svgNS, 'path');
+        river.setAttribute('d', 'M -500 9400 C 4300 7600 7100 10800 10400 9800 S 16600 7600 18600 10300 S 22700 12900 24500 11200 L 24500 14800 C 22100 16400 19400 14700 17300 13700 S 11900 12400 10100 13400 S 4900 14700 -500 12800 Z');
+        river.setAttribute('fill', 'url(#water-gradient)'); river.setAttribute('opacity', '.92'); svg.append(river);
+
+        const road = (d, width, opacity) => {
+            const path = document.createElementNS(svgNS, 'path');
+            path.setAttribute('d', d); path.setAttribute('fill', 'none'); path.setAttribute('stroke', '#b8aa8e'); path.setAttribute('stroke-width', String(width)); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('opacity', opacity || '.92'); return path;
+        };
+        svg.append(
+            road('M 12000 0 L 12000 36000', 520),
+            road('M 0 17400 C 5200 16800 7800 17700 12000 17400 S 19100 18000 24000 17100', 520),
+            road('M 2400 7200 L 21600 7200', 360), road('M 3600 24600 L 20400 24600', 360),
+            road('M 4800 7200 L 7200 24600', 300), road('M 19200 7200 L 16800 24600', 300),
+            road('M 12000 0 L 12000 36000', 90, '.55'),
+            road('M 0 17400 C 5200 16800 7800 17700 12000 17400 S 19100 18000 24000 17100', 90, '.55'),
+            road('M 2400 7200 L 21600 7200', 70, '.55'), road('M 3600 24600 L 20400 24600', 70, '.55')
+        );
+
+        DISTRICT_LAYOUT.forEach((district, index) => {
+            const zone = document.createElementNS(svgNS, 'rect');
+            zone.setAttribute('x', String(district.x - 2700)); zone.setAttribute('y', String(district.y - 2300)); zone.setAttribute('width', '5400'); zone.setAttribute('height', '4600'); zone.setAttribute('rx', '620');
+            zone.setAttribute('fill', index % 2 ? '#52604b' : '#455641'); zone.setAttribute('opacity', '.48'); svg.append(zone);
+            const ring = document.createElementNS(svgNS, 'circle');
+            ring.setAttribute('cx', String(district.x)); ring.setAttribute('cy', String(district.y)); ring.setAttribute('r', '2050'); ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', '#d8c9a6'); ring.setAttribute('stroke-width', '46'); ring.setAttribute('opacity', '.35'); svg.append(ring);
+        });
+        this.scene.appendChild(svg);
+    }
+
+    createSupportBuildings() {
+        DISTRICT_LAYOUT.forEach(district => {
+            SUPPORT_OFFSETS.forEach((offset, index) => {
+                const element = document.createElement('div');
+                element.className = 'world-support-building support-' + ((index % 3) + 1);
+                element.style.left = (district.x + offset[0]) + 'px';
+                element.style.top = (district.y + offset[1]) + 'px';
+                element.innerHTML = '<span class="support-roof"></span><span class="support-body"></span><span class="support-windows"></span>';
+                this.scene.appendChild(element);
             });
+            const label = document.createElement('div');
+            label.className = 'world-district-label'; label.style.left = district.x + 'px'; label.style.top = (district.y - 1900) + 'px'; label.textContent = district.label; this.scene.appendChild(label);
         });
     }
 
@@ -1033,11 +1054,8 @@ class World {
             this.scene.querySelector('.world-farm');
 
         if (farm) {
-            farm.style.left =
-                `${WORLD_WIDTH / 2}px`;
-
-            farm.style.top =
-                `${WORLD_HEIGHT / 2}px`;
+            farm.style.left = '7200px';
+            farm.style.top = '24600px';
 
             const level =
                 farm.querySelector('.object-level');
