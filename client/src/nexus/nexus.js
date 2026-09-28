@@ -104,7 +104,7 @@ const ECONOMIC_LINKS = Object.freeze([
             'surface.transit-hub',
             'undercity.smuggling-hub',
             'undercity.black-market',
-            'surface.night-district'
+            'surface.night-club'
         ])
     }),
     Object.freeze({
@@ -229,6 +229,17 @@ function setMissionStatus(state, missionId, status) {
     return nextState;
 }
 
+function getBuildingFaction(side, buildingId) {
+    const district = CITY_SIDE_DATA[side]?.district;
+    if (!district || typeof buildingId !== 'string') return null;
+
+    for (const [factionId, buildingIds] of Object.entries(district.buildingsByFaction)) {
+        if (buildingIds.includes(buildingId)) return factionId;
+    }
+
+    return null;
+}
+
 function calculateFactionIncome(amount, buildingFaction, playerFaction, remainder = 0) {
     if (!Number.isFinite(amount) || amount < 0) {
         return { income: 0, remainder: 0 };
@@ -268,5 +279,6 @@ export {
     saveNexusState,
     setNexusFaction,
     setMissionStatus,
+    getBuildingFaction,
     calculateFactionIncome
 };
