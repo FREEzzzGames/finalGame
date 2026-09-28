@@ -570,6 +570,25 @@ class World {
                 this.viewport.releasePointerCapture(event.pointerId);
             } catch {}
 
+            if (this.activePointers.size === 1) {
+                const remaining = [...this.activePointers.values()][0];
+
+                this.lastPointer = {
+                    x: remaining.x,
+                    y: remaining.y
+                };
+
+                gestures.start(
+                    remaining.x,
+                    remaining.y,
+                    event.timeStamp
+                );
+
+                this.dragMoved = true;
+                this.suppressBuildingClick = true;
+                return;
+            }
+
             if (this.activePointers.size > 0) {
                 return;
             }
