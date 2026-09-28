@@ -21,6 +21,7 @@ let world = null;
 let chatWidget = null;
 let playerSession = null;
 let unsubscribeTelegramViewport = null;
+let startupStage = 'Application startup';
 
 function setBootStatus(message, isError = false) {
     if (!bootStatus) return;
@@ -219,11 +220,19 @@ function finishBoot() {
     });
 }
 
-function showBootError(error) {
+function showBootError(error, stage) {
+    const errorName =
+        error instanceof Error ? error.name : 'NonErrorThrown';
+
     const message =
         error instanceof Error ? error.message : String(error);
 
-    setBootStatus('Startup error', true);
+    const stack =
+        error instanceof Error && error.stack
+            ? `\nStack:\n${error.stack}`
+            : '';
+
+    setBootStatus(`Startup error — ${stage}`, true);
 
     if (!appRoot) return;
 
@@ -235,7 +244,8 @@ function showBootError(error) {
         appRoot.appendChild(errorElement);
     }
 
-    errorElement.textContent = message;
+    errorElement.textContent =
+        `Stage: ${stage}\nName: ${errorName}\nMessage: ${message}${stack}`;
 }
 
 async function startApp() {
@@ -243,18 +253,23 @@ async function startApp() {
         throw new Error('[FREEzzzGames] #app was not found.');
     }
 
+    startupStage = 'Telegram initialization';
     setBootStatus('Initializing…');
 
     initializeTelegram();
 
+    startupStage = 'Telegram authentication';
     playerSession = await authenticateTelegram();
 
+    startupStage = 'World startup';
     setBootStatus('Starting World…');
     startWorld();
 
+    startupStage = 'Geek Chat startup';
     setBootStatus('Starting Geek Chat…');
     startChat();
 
+    startupStage = 'finish boot';
     finishBoot();
 
     console.info('[FREEzzzGames] Application initialized.', {
@@ -277,7 +292,7 @@ startApp().catch(error => {
         error
     );
 
-    showBootError(error);
+    showBootError(error, startupStage);
 });
 
 export {
