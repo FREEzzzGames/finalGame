@@ -1013,10 +1013,12 @@ class World {
         const height = camera.viewportHeight;
 
         const offsetX =
-            width / 2 - camera.x;
+            width / 2 -
+            camera.x * camera.zoom;
 
         const offsetY =
-            height / 2 - camera.y;
+            height / 2 -
+            camera.y * camera.zoom;
 
         this.scene.style.width =
             `${WORLD_WIDTH}px`;
@@ -1025,7 +1027,7 @@ class World {
             `${WORLD_HEIGHT}px`;
 
         this.scene.style.transform =
-            `translate3d(${offsetX}px, ${offsetY}px, 0)`;
+            `translate3d(${offsetX}px, ${offsetY}px, 0) scale(${camera.zoom})`;
 
         const farm =
             this.scene.querySelector('.world-farm');
