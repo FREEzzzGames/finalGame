@@ -3,7 +3,7 @@
 .world-stage{touch-action:none!important;overflow:hidden!important;position:absolute!important;inset:0!important;user-select:none;-webkit-user-select:none}
 .world-canvas{position:absolute!important;left:50%!important;top:50%!important;width:24000px!important;height:36000px!important;transform:translate3d(calc(-50% + var(--cam-x,0px)),calc(-50% + var(--cam-y,0px)),0) scale(var(--zoom,.045))!important;transform-origin:center center!important;will-change:transform!important}
 .nexus-map{position:absolute!important;left:0;top:0;width:24000px!important;height:36000px!important;display:block;pointer-events:none}
-.world-support{position:absolute;width:360px;height:280px;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 26px 24px rgba(0,0,0,.32))}
+.world-support{position:absolute;width:430px;height:330px;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 26px 24px rgba(0,0,0,.32))}
 .world-support:before{content:"";position:absolute;left:12px;right:12px;bottom:0;height:210px;border-radius:20px 20px 10px 10px;background:linear-gradient(180deg,#d8d2bf 0 64%,#8e816d 65%);border:14px solid #50483d;box-shadow:inset 0 -28px 0 rgba(30,25,20,.16)}
 .world-support:after{content:"";position:absolute;left:-18px;right:-18px;top:18px;height:78px;border-radius:50% 50% 16px 16px;background:linear-gradient(135deg,#755039,#35271f);border:12px solid #3e3028}
 .world-support i{position:absolute;z-index:2;left:48px;right:48px;bottom:52px;height:64px;border:9px solid #4b5559;background:repeating-linear-gradient(90deg,#43616c 0 34px,#d6c59c 34px 52px);border-radius:7px}
@@ -16,12 +16,12 @@
 .world-support.support-3:before{height:280px;background:linear-gradient(180deg,#d9cbaa 0 76%,#887254 77%);border-color:#57493a}
 .world-support.support-3:after{top:24px;height:66px;background:linear-gradient(135deg,#8a5c42,#4a3024)}
 .world-district-name{position:absolute;transform:translate(-50%,-50%);padding:34px 72px;border:8px solid rgba(230,215,180,.45);border-radius:80px;background:rgba(18,24,20,.72);color:#fff4d8;font:900 82px/1 system-ui,sans-serif;letter-spacing:.14em;white-space:nowrap;text-shadow:0 5px 18px #000;pointer-events:none}
-.world-building{position:absolute!important;z-index:30;width:1050px!important;height:900px!important;margin:0!important;padding:0!important;transform:translate(-50%,-50%)!important;border:0!important;background:transparent!important;color:#fff;cursor:pointer;filter:drop-shadow(0 30px 34px rgba(0,0,0,.5));pointer-events:auto}
+ .world-building{position:absolute!important;z-index:30;width:1450px!important;height:1250px!important;margin:0!important;padding:0!important;transform:translate(-50%,-50%)!important;border:0!important;background:transparent!important;color:#fff;cursor:pointer;filter:drop-shadow(0 30px 34px rgba(0,0,0,.5));pointer-events:auto}
 .world-building.locked{opacity:.46;filter:grayscale(.7) drop-shadow(0 22px 24px #0008)}
 .building-roof{position:absolute;left:5%;right:5%;top:5%;height:30%;border-radius:46% 46% 12% 12%;background:linear-gradient(145deg,#8d6a45,#3e2d21);border:26px solid #30251e;box-shadow:inset 0 -20px rgba(0,0,0,.2)}
 .building-body{position:absolute;left:12%;right:12%;top:28%;bottom:8%;border-radius:22px 22px 12px 12px;background:linear-gradient(180deg,#d8d2c0 0 70%,#8e806d 71%);border:24px solid #4b4338}
 .building-glass{position:absolute;left:20%;right:20%;top:42%;height:27%;border:18px solid #4d5557;background:repeating-linear-gradient(90deg,#416b78 0 72px,#d6c39a 72px 90px);box-shadow:0 18px 0 rgba(0,0,0,.14)}
-.building-core{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-size:190px;filter:drop-shadow(0 8px 10px #000)}
+.building-core{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-size:250px;filter:drop-shadow(0 8px 10px #000)}
 .b-sign{position:absolute;left:50%;bottom:1%;transform:translateX(-50%);padding:20px 34px;border:5px solid rgba(235,245,245,.32);border-radius:14px;background:rgba(4,9,13,.88);font-size:30px;font-weight:950;letter-spacing:.08em;white-space:nowrap}
 .building-level{position:absolute;right:4%;top:4%;padding:14px 18px;border-radius:16px;background:#07151a;border:4px solid rgba(97,230,161,.55);color:#b5f5ca;font-size:28px;font-weight:950}
 .world-main-1 .building-roof{background:linear-gradient(145deg,#687d89,#29353b)}
@@ -36,6 +36,14 @@
 .world-support{transform:translate(-50%,-50%) scale(.9)}
 .world-district-name{font-size:64px;padding:28px 54px}
 }
+
+.district-scene{pointer-events:none}
+.world-stage .world-title{z-index:60}
+.world-stage .world-era{z-index:60}
+.world-hud{z-index:70!important}
+.world-selected small{display:none!important}
+.district-rail{gap:8px!important;padding:10px!important}
+.district-rail .btn{min-width:118px!important;min-height:58px!important;padding:10px 14px!important}
 </style></head><body><div id="app"></div><div id="toast" class="toast"></div><script>
 'use strict';
 const KEY='system-local-online-v3';
@@ -59,35 +67,72 @@ var districts=[
  {name:c.districts[4]?.name||'Industrial',x:12000,y:18000}
 ];
 var supports=[[-1050,-850],[0,-1150],[1050,-850],[-1150,650],[0,1050],[1150,650]];
-var colors=isU?['#241b36','#33274a','#5a3b70']:['#273e2d','#385436','#7a5b38'];
+var themes=[
+ {ground:'#87947b',road:'#3b4544',sidewalk:'#c5bca7',building:'#b9b0a0',roof:'#66584b',glass:'#71929a',accent:'#d3ad62'},
+ {ground:'#697e87',road:'#303b42',sidewalk:'#aab8bb',building:'#9daeb4',roof:'#394a54',glass:'#79b3c2',accent:'#78d6df'},
+ {ground:'#8b745d',road:'#453d3a',sidewalk:'#c6aa86',building:'#c8b39a',roof:'#6b4d3b',glass:'#8b9b91',accent:'#e6b35f'},
+ {ground:'#72866f',road:'#424a43',sidewalk:'#c4c0a7',building:'#b8b6a5',roof:'#5d6253',glass:'#789394',accent:'#d6c27a'},
+ {ground:'#68736d',road:'#343b3a',sidewalk:'#aaa99b',building:'#9b9d97',roof:'#4c514e',glass:'#668a8f',accent:'#c78b4c'}
+];
+var theme=themes[0];
+function districtScene(p,di){
+ var q=themes[di],x=p.x-2600,y=p.y-2600,o='';
+ o+='<g class="district-scene scene-'+di+'">';
+ o+='<rect x="'+x+'" y="'+y+'" width="5200" height="5200" rx="360" fill="'+q.ground+'" stroke="#202b2b" stroke-width="70" filter="url(#cityShadow)"/>';
+ o+='<rect x="'+(x+240)+'" y="'+(y+240)+'" width="4720" height="4720" rx="260" fill="#000" opacity=".07"/>';
+ o+='<rect x="'+(p.x-320)+'" y="'+y+'" width="640" height="5200" fill="'+q.road+'"/>';
+ o+='<rect x="'+x+'" y="'+(p.y-320)+'" width="5200" height="640" fill="'+q.road+'"/>';
+ o+='<rect x="'+(p.x-210)+'" y="'+y+'" width="420" height="5200" fill="'+q.sidewalk+'" opacity=".95"/>';
+ o+='<rect x="'+x+'" y="'+(p.y-210)+'" width="5200" height="420" fill="'+q.sidewalk+'" opacity=".95"/>';
+ o+='<path d="M'+p.x+' '+y+'V'+(y+5200)+' M'+x+' '+p.y+'H'+(x+5200)+'" stroke="#efe7d0" stroke-width="34" stroke-dasharray="150 130" opacity=".72"/>';
+ var blocks=[
+  [-2200,-2200,1500,1350],[-500,-2200,1900,1350],[700,-2200,1500,1350],
+  [-2200,700,1500,1500],[-500,700,1900,1500],[700,700,1500,1500],
+  [-2200,-450,1500,700],[700,-450,1500,700]
+ ];
+ blocks.forEach(function(z,k){
+   var bx=p.x+z[0],by=p.y+z[1],bw=z[2],bh=z[3];
+   o+='<g filter="url(#buildingShadow)"><rect x="'+bx+'" y="'+by+'" width="'+bw+'" height="'+bh+'" rx="54" fill="'+q.building+'" stroke="#3c3a36" stroke-width="42"/>';
+   o+='<rect x="'+(bx+70)+'" y="'+(by+70)+'" width="'+(bw-140)+'" height="'+Math.min(250,bh-140)+'" rx="28" fill="'+q.roof+'"/>';
+   o+='<rect x="'+(bx+110)+'" y="'+(by+390)+'" width="'+(bw-220)+'" height="'+Math.max(160,bh-500)+'" rx="20" fill="url(#cityWindows)" opacity=".78"/>';
+   o+='<rect x="'+(bx+bw*.12)+'" y="'+(by+bh-110)+'" width="'+(bw*.76)+'" height="42" rx="20" fill="'+q.accent+'" opacity=".55"/>';
+   o+='</g>';
+ });
+ var trees=[[-2050,-500],[-1750,-500],[-2050,500],[1850,-500],[2100,-500],[1900,500],[-1850,1850],[1850,1850]];
+ trees.forEach(function(t){
+   var tx=p.x+t[0],ty=p.y+t[1];
+   o+='<g filter="url(#buildingShadow)"><circle cx="'+tx+'" cy="'+(ty+90)+'" r="95" fill="#3f4b3b"/><circle cx="'+tx+'" cy="'+ty+'" r="190" fill="#587452"/><circle cx="'+(tx-70)+'" cy="'+(ty-40)+'" r="95" fill="#6f8b61"/></g>';
+ });
+ for(var car=0;car<8;car++){
+   var cx=p.x-1900+(car%4)*1250,cy=(car<4?p.y-360:p.y+360);
+   o+='<g transform="translate('+cx+' '+cy+')"><rect x="-92" y="-44" width="184" height="88" rx="24" fill="'+(car%2?'#b84f43':'#d7d0b8')+'" stroke="#263236" stroke-width="18"/><rect x="-48" y="-28" width="96" height="32" rx="10" fill="#6f929b"/><circle cx="-55" cy="44" r="20" fill="#222"/><circle cx="55" cy="44" r="20" fill="#222"/></g>';
+ }
+ if(di===0){
+   o+='<circle cx="'+p.x+'" cy="'+p.y+'" r="720" fill="#d8c28b" opacity=".20"/><circle cx="'+p.x+'" cy="'+p.y+'" r="510" fill="#e6d6b0" opacity=".18"/><circle cx="'+p.x+'" cy="'+p.y+'" r="170" fill="#91a6a7" stroke="#3e5151" stroke-width="34"/><circle cx="'+p.x+'" cy="'+p.y+'" r="70" fill="'+q.accent+'"/>';
+ }else if(di===1){
+   o+='<rect x="'+(p.x-760)+'" y="'+(p.y-470)+'" width="1520" height="940" rx="90" fill="#1e343d" opacity=".9" stroke="'+q.accent+'" stroke-width="30"/><path d="M'+(p.x-520)+' '+(p.y+260)+'L'+(p.x-250)+' '+(p.y-260)+'L'+p.x+' '+(p.y+120)+'L'+(p.x+300)+' '+(p.y-300)+'L'+(p.x+540)+' '+(p.y+250)+'" fill="none" stroke="'+q.accent+'" stroke-width="42"/>';
+ }else if(di===2){
+   for(var stall=0;stall<5;stall++){var sx=p.x-800+stall*400; o+='<g><rect x="'+sx+'" y="'+(p.y-180)+'" width="300" height="230" rx="18" fill="#d9c4a0" stroke="#55463b" stroke-width="18"/><path d="M'+sx+' '+(p.y-180)+'h300l-45-130h-210z" fill="'+(stall%2?'#a64c45':q.accent)+'"/></g>';}
+ }else if(di===3){
+   o+='<rect x="'+(p.x-900)+'" y="'+(p.y-700)+'" width="1800" height="1400" rx="100" fill="#526d51" stroke="#d8d1ad" stroke-width="32"/><path d="M'+(p.x-700)+' '+p.y+'Q'+p.x+' '+(p.y-420)+' '+(p.x+700)+' '+p.y+'Q'+p.x+' '+(p.y+420)+' '+(p.x-700)+' '+p.y" fill="none" stroke="#d9cfac" stroke-width="70"/>';
+ }else{
+   for(var box=0;box<6;box++){var bx2=p.x-850+(box%3)*700,by2=p.y-500+Math.floor(box/3)*700;o+='<rect x="'+bx2+'" y="'+by2+'" width="560" height="430" rx="28" fill="'+(box%2?'#69736f':'#8a918b')+'" stroke="#39413e" stroke-width="30"/><rect x="'+(bx2+70)+'" y="'+(by2+80)+'" width="420" height="90" fill="'+q.accent+'" opacity=".55"/><rect x="'+(bx2+70)+'" y="'+(by2+220)+'" width="160" height="130" fill="#536e74"/><rect x="'+(bx2+270)+'" y="'+(by2+220)+'" width="220" height="130" fill="#536e74"/></g>';}
+ }
+ o+='<text x="'+p.x+'" y="'+(p.y-2100)+'" text-anchor="middle" fill="#fff4dc" font-size="150" font-weight="900" letter-spacing="24" opacity=".92">'+String(districts[di].name).toUpperCase()+'</text>';
+ o+='</g>';
+ return o;
+}
 var svg='<svg class="nexus-map" viewBox="0 0 '+W+' '+H+'" aria-hidden="true">'+
 '<defs>'+
-'<linearGradient id="land" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="'+colors[1]+'"/><stop offset="1" stop-color="'+colors[0]+'"/></linearGradient>'+
-'<linearGradient id="water" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="'+(isU?'#282c52':'#315d78')+'"/><stop offset="1" stop-color="'+(isU?'#11162d':'#173b54')+'"/></linearGradient>'+
-'<filter id="shadow"><feDropShadow dx="0" dy="24" stdDeviation="22" flood-opacity=".35"/></filter>'+
+'<linearGradient id="worldGround" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#111b1d"/><stop offset="1" stop-color="#202a27"/></linearGradient>'+
+'<pattern id="cityWindows" width="150" height="120" patternUnits="userSpaceOnUse"><rect width="150" height="120" fill="#879ba0"/><rect x="18" y="18" width="42" height="60" rx="8" fill="#d9e6e4"/><rect x="88" y="18" width="42" height="60" rx="8" fill="#516c73"/><rect x="18" y="92" width="112" height="10" fill="#52666b"/></pattern>'+
+'<filter id="cityShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="34" stdDeviation="35" flood-color="#000" flood-opacity=".48"/></filter>'+
+'<filter id="buildingShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#000" flood-opacity=".38"/></filter>'+
 '</defs>'+
-'<rect width="'+W+'" height="'+H+'" fill="url(#land)"/>'+
-'<path d="M-1000 4200 C4200 7200 3400 11200 8200 14200 S15600 17800 13100 21800 S11800 29200 19000 37000 L24000 37000 L24000 0 L-1000 0Z" fill="url(#water)" opacity=".92"/>'+
-'<g fill="none" stroke="#9a825f" stroke-width="170" opacity=".48">'+
-'<path d="M-1000 5100 C4800 8000 7200 10400 23800 12400"/>'+
-'<path d="M-1000 19800 C5200 17800 11600 18500 25000 16600"/>'+
-'<path d="M-1000 31000 C5200 27400 13700 29600 25000 25800"/>'+
-'</g>'+
-'<g fill="none" stroke="#c7b58b" stroke-width="58" opacity=".72">'+
-'<path d="M0 9000 L24000 9000"/><path d="M0 18000 L24000 18000"/><path d="M0 27000 L24000 27000"/>'+
-'<path d="M6000 0 L6000 36000"/><path d="M12000 0 L12000 36000"/><path d="M18000 0 L18000 36000"/>'+
-'</g>'+
-'<g fill="none" stroke="#e4d7b7" stroke-width="22" opacity=".58">'+
-'<path d="M0 4500 L24000 4500"/><path d="M0 13500 L24000 13500"/><path d="M0 22500 L24000 22500"/><path d="M0 31500 L24000 31500"/>'+
-'<path d="M3000 0 L3000 36000"/><path d="M9000 0 L9000 36000"/><path d="M15000 0 L15000 36000"/><path d="M21000 0 L21000 36000"/>'+
-'</g>'+
-'<g fill="#d6c9a7" opacity=".22">'+
-'<circle cx="12000" cy="6500" r="2600"/><circle cx="6000" cy="18000" r="2600"/><circle cx="18000" cy="18000" r="2600"/><circle cx="12000" cy="29500" r="2600"/><circle cx="12000" cy="18000" r="2600"/>'+
-'</g>'+
-'<g fill="none" stroke="#e7d9b9" stroke-width="34" opacity=".55">'+
-'<circle cx="12000" cy="6500" r="2350"/><circle cx="6000" cy="18000" r="2350"/><circle cx="18000" cy="18000" r="2350"/><circle cx="12000" cy="29500" r="2350"/><circle cx="12000" cy="18000" r="2350"/>'+
-'</g></svg>';
-
+'<rect width="'+W+'" height="'+H+'" fill="url(#worldGround)"/>'+
+'<path d="M0 11800L24000 11800M0 24000L24000 24000M4200 0L4200 36000M19800 0L19800 36000" stroke="#33423d" stroke-width="90" opacity=".38"/>'+
+districts.map(function(p,i){return districtScene(p,i)}).join('')+
+'</svg>';
 var mainMarkup=defs.map(function(b,i){
 var p=districts[i];
 var unlocked=c.buildings[b[0]]?.unlocked;
@@ -115,7 +160,7 @@ return '<div class="world"><div class="switch"><button class="pill" data-a="swit
 '<div class="world-stage '+s.side+'" id="worldStage"><div class="world-canvas" id="worldCanvas">'+svg+supportMarkup+mainMarkup+'</div>'+
 '<div class="world-title"><h1>'+s.side.toUpperCase()+'</h1><small>NEXUS // '+d.name.toUpperCase()+' · '+(isU?'DEEP NETWORK':'METROPOLIS')+'</small></div>'+
 '<div class="era world-era"><div><b>ERA '+s.era+'/12</b><small>XP '+s.player.xp+' · INFLUENCE '+s.eco.influence+' · RISK '+s.eco.risk+'</small></div><button class="btn primary" data-a="era">ADVANCE '+(ERA[s.era-1]?ERA[s.era-1].cost:'MAX')+'</button></div>'+
-'<div class="world-info" id="worldInfo"></div><div class="world-hud"><div class="hud-panel district-rail">'+rail+'</div><div class="hud-panel world-selected"><b>'+d.name+'</b><small>'+t('simulation')+' · drag to explore · pinch/scroll to zoom</small></div></div></div></div>';
+'<div class="world-info" id="worldInfo"></div><div class="world-hud"><div class="hud-panel district-rail">'+rail+'</div><div class="hud-panel world-selected"><b>'+d.name+'</b><small>'+t('simulation')+' · swipe to travel between districts</small></div></div></div></div>';
 },collection:function(){var s=G.s,own=new Set(s.owned);return '<div class="section"><div class="title"><div><small>GENESIS // COLLECTION</small><h2>'+t('collection')+'</h2></div><button class="btn primary" data-a="pack">PACK '+(50+s.era*15)+'</button></div><div class="grid">'+HEROES.map(function(h){var heroNo=HEROES.indexOf(h)+1;return '<article class="hero '+h.rarity.toLowerCase()+' '+(own.has(h.id)?'':'unknown')+'"><div class="av" style="--hero-art:url(\''+assetUrl('characters/hero_'+String(heroNo).padStart(2,'0')+'.png')+'\')">'+(own.has(h.id)?h.avatar:'?')+'</div><strong>'+(own.has(h.id)?h.name:'Unknown')+'</strong><small>'+h.rarity+'</small>'+(own.has(h.id)&&s.owned.length>1?'<div class="tiny"><button class="btn" data-a="list" data-p="'+h.id+'">LIST</button><button class="btn" data-a="auction" data-p="'+h.id+'">AUCTION</button></div>':'')+'</article>'}).join('')+'</div></div>'},market:function(){var s=G.s;return '<div class="section"><div class="title"><div><small>LOCAL ONLINE SIMULATION</small><h2>'+t('market')+'</h2></div><button class="btn primary" data-a="sim">SIMULATE</button></div><div class="list">'+s.listings.slice().reverse().map(function(x){var h=HEROES.find(function(y){return y.id===x.hero})||HEROES[0];return '<article class="listing"><div class="seller">🛰️ '+x.seller+'</div><div class="lh">'+h.avatar+' '+h.name+' · '+h.rarity+'</div><div class="price">🪙 '+x.price+'</div><button class="btn" data-a="buy" data-p="'+x.id+'">'+t('buy')+'</button></article>'}).join('')+'<div class="card" style="padding:12px;grid-column:1/-1"><b>AUCTIONS</b><div class="list" style="margin-top:8px">'+s.auctions.map(function(x){var h=HEROES.find(function(y){return y.id===x.hero})||HEROES[0];return '<article class="listing"><div>'+h.avatar+' '+h.name+'</div><div class="price">🪙 '+x.bid+' · '+x.bidder+'</div><button class="btn" data-a="bid" data-p="'+x.id+'">BID +10</button></article>'}).join('')+'</div></div></div></div>'},chat:function(){var s=G.s,r=G.chatRoom,m=s.chat[r]||[];return '<div class="chat"><div class="title"><div><small>NEXUS // VIRTUAL USERS</small><h2>'+t('chat')+'</h2></div><select id="room"><option value="general" '+(r==='general'?'selected':'')+'>#general</option><option value="market" '+(r==='market'?'selected':'')+'>#market</option><option value="nexus" '+(r==='nexus'?'selected':'')+'>#nexus</option></select></div><div class="chatlog">'+m.slice(-60).map(function(x){return '<div class="msg"><div class="av">'+x.avatar+'</div><div><b>'+x.author+'</b><span>'+x.text+'</span><small>'+new Date(x.time).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})+'</small></div></div>'}).join('')+'</div><form id="chatForm"><input maxlength="160" placeholder="Write to local network…"><button class="btn primary">➤</button></form><div style="padding-top:7px;color:var(--m);font-size:7px">'+NPC.map(function(n){return n[1]+' '+n[0]}).join(' · ')+'</div></div>'},missions:function(){var s=G.s;return '<div class="section"><div class="title"><div><small>NEXUS // OPERATIONS</small><h2>'+t('missions')+'</h2></div></div>'+s.missions.slice(0,6).map(function(m){return '<article class="card mission"><div class="mi">⚡</div><div><h3>Operation '+m.id+'</h3><p>Build the network, expand the city and interact with the simulated online economy.</p><div class="bar"><i style="width:'+Math.min(100,m.progress/m.target*100)+'%"></i></div></div>'+(m.claimed?'<b style="color:var(--g)">✓</b>':m.progress>=m.target?'<button class="btn primary" data-a="claim" data-p="'+m.id+'">'+t('claim')+'</button>':'<span style="color:var(--m);font-size:8px">'+m.progress+'/'+m.target+'</span>')+'</article>'}).join('')+'</div>'},lore:function(){var s=G.s;return '<div class="section"><div class="title"><div><small>ARCHIVE // NEXUS</small><h2>'+t('lore')+'</h2></div><b>CHAPTER '+s.lore+'/12</b></div><article class="card" style="padding:25px;min-height:350px;background:radial-gradient(circle at 80% 20%,rgba(154,124,255,.18),transparent 30%),linear-gradient(145deg,#111b2c,#080e17)"><small style="color:var(--c);letter-spacing:.25em">NEXUS</small><h2>The city remembers every transaction.</h2><p style="max-width:650px;color:#9aaabd;line-height:1.8">Surface and Undercity are one economy with two faces. Government stabilizes production and influence; Mafia accelerates underground networks while increasing risk. Missions, collection, market activity and progression feed back into the same player state.</p><div class="statsgrid"><div><b>'+s.eco.networks+'</b><small>NETWORKS</small></div><div><b>'+s.eco.influence+'</b><small>INFLUENCE</small></div><div><b>'+s.eco.risk+'</b><small>RISK</small></div><div><b>'+s.era+'/12</b><small>ERA</small></div></div></article></div>'},profile:function(){var s=G.s;return '<div class="section"><div class="card profile"><div class="avatar">🧑‍💻</div><div><small>LOCAL PLAYER</small><h2>'+s.player.name+'</h2><span>LEVEL '+s.player.level+' · XP '+s.player.xp+'</span></div><b class="online">● ONLINE SIM</b></div><div class="statsgrid"><div><b>'+Math.floor(s.eco.coins).toLocaleString()+'</b><small>COINS</small></div><div><b>'+G.income().toFixed(1)+'</b><small>COIN/S</small></div><div><b>'+s.owned.length+'/20</b><small>HEROES</small></div><div><b>'+s.eco.energy+'</b><small>ENERGY</small></div><div><b>'+s.eco.data+'</b><small>DATA</small></div><div><b>'+s.eco.risk+'</b><small>RISK</small></div></div><div class="settings"><button class="btn" data-a="lang">🌐 '+s.lang.toUpperCase()+'</button><button class="btn" data-a="save">💾 '+t('save')+'</button><button class="btn" data-a="export">⬇ '+t('export')+'</button><button class="btn" data-a="import">⬆ '+t('import')+'</button><button class="btn" data-a="reset">↻ '+t('reset')+'</button></div><div class="card notice"><b style="color:var(--c)">'+t('simulation')+'</b><br>Virtual players, market listings, auctions, chat messages, offline income and state changes are generated locally through one command/state/event flow. No backend is required for development.</div></div>'}};
 const ASSET_BASE='https://raw.githubusercontent.com/Hidencod/tge-assets/main/';const BUILDING_ASSETS={workshop:'packs/city-kit-commercial/thumbs/building-a.webp',stadium:'packs/city-kit-commercial/thumbs/building-b.webp',studio:'packs/city-kit-commercial/thumbs/building-c.webp',commerce:'packs/city-kit-commercial/thumbs/building-d.webp',research:'packs/city-kit-commercial/thumbs/building-e.webp',forge:'packs/city-kit-commercial/thumbs/building-f.webp',fight:'packs/city-kit-commercial/thumbs/building-g.webp',signal:'packs/city-kit-commercial/thumbs/building-h.webp',black:'packs/city-kit-commercial/thumbs/building-i.webp',data:'packs/city-kit-commercial/thumbs/building-j.webp'};const WORLD_ASSETS={surface:['https://cdn.polyhaven.com/asset_img/primary/urban_street_01.png?height=1200','https://cdn.polyhaven.com/asset_img/primary/urban_street_02.png?height=1200'],undercity:['https://cdn.polyhaven.com/asset_img/primary/concrete.png?height=1200','https://cdn.polyhaven.com/asset_img/primary/concrete_pavement_02.png?height=1200']};function assetUrl(p){return /^https?:\/\//.test(p)?p:ASSET_BASE+p}function uid(){return Math.random().toString(36).slice(2)+Date.now()}
 function bind(){
