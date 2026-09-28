@@ -40,7 +40,7 @@
  */
 
 const APP_VERSION = '0.2.1';
-const MODULE_VERSION = '0.2.3';
+const MODULE_VERSION = '0.2.4';
 
 const appRoot =
     document.querySelector('#app');
@@ -139,8 +139,6 @@ function initializeTelegram() {
             TelegramAdapter.init();
 
         if (telegram) {
-            applyTelegramViewportHeight();
-
             unsubscribeTelegramViewport =
                 TelegramAdapter.onViewportChanged(
                     () => {
@@ -155,6 +153,9 @@ function initializeTelegram() {
                         );
                     }
                 );
+
+            TelegramAdapter.expand();
+            applyTelegramViewportHeight();
         }
 
         return telegram;
