@@ -88,11 +88,26 @@ class ChatWidget {
         this.button =
             null;
 
+        this.buttonIcon =
+            null;
+
+        this.unreadIndicator =
+            null;
+
         this.chatUI =
             null;
 
         this.isOpen =
             false;
+
+        this.hasUnread =
+            false;
+
+        this.unsubscribeMessages =
+            null;
+
+        this.pulseTimer =
+            null;
     }
 
     mountTo(element) {
@@ -116,12 +131,40 @@ class ChatWidget {
                 rooms: this.rooms,
                 avatars: this.avatars,
                 locale: this.locale,
-                author: this.author
+                author: this.author,
+                onClose: () => {
+                    this.isOpen = false;
+                    this.updateButton();
+                }
             });
 
         this.chatUI.mountTo(
             this.mount
         );
+
+        if (typeof this.chat.subscribe === 'function') {
+            this.unsubscribeMessages = this.chat.subscribe(message => {
+                if (
+                    this.isOpen ||
+                    message.author === this.author
+                ) {
+                    return;
+                }
+
+                this.hasUnread = true;
+                this.updateButton();
+
+                if (this.button) {
+                    this.button.classList.add('is-pulsing');
+                }
+
+                clearTimeout(this.pulseTimer);
+                this.pulseTimer = setTimeout(() => {
+                    this.button?.classList.remove('is-pulsing');
+                    this.pulseTimer = null;
+                }, 900);
+            });
+        }
 
         return true;
     }
@@ -150,6 +193,36 @@ class ChatWidget {
 
         this.button.className =
             'chat-widget-button';
+
+        this.buttonIcon =
+            document.createElement('span');
+
+        this.buttonIcon.className =
+            'chat-widget-icon';
+
+        this.buttonIcon.setAttribute(
+            'aria-hidden',
+            'true'
+        );
+
+        this.buttonIcon.textContent =
+            '💬';
+
+        this.unreadIndicator =
+            document.createElement('span');
+
+        this.unreadIndicator.className =
+            'chat-widget-unread';
+
+        this.unreadIndicator.setAttribute(
+            'aria-hidden',
+            'true'
+        );
+
+        this.button.append(
+            this.buttonIcon,
+            this.unreadIndicator
+        );
 
         this.button.setAttribute(
             'aria-expanded',
@@ -181,10 +254,15 @@ class ChatWidget {
         const text =
             WIDGET_TEXT[this.locale];
 
-        this.button.textContent =
-            this.isOpen
-                ? '×'
-                : '💬';
+        if (this.buttonIcon) {
+            this.buttonIcon.textContent =
+                this.isOpen ? '×' : '💬';
+        }
+
+        if (this.unreadIndicator) {
+            this.unreadIndicator.hidden =
+                !this.hasUnread || this.isOpen;
+        }
 
         this.button.setAttribute(
             'aria-label',
@@ -216,6 +294,12 @@ class ChatWidget {
 
         this.isOpen =
             true;
+
+        this.hasUnread =
+            false;
+
+        clearTimeout(this.pulseTimer);
+        this.pulseTimer = null;
 
         this.chatUI.open();
 
@@ -288,6 +372,14 @@ class ChatWidget {
     }
 
     destroy() {
+        if (this.unsubscribeMessages) {
+            this.unsubscribeMessages();
+            this.unsubscribeMessages = null;
+        }
+
+        clearTimeout(this.pulseTimer);
+        this.pulseTimer = null;
+
         if (this.chatUI) {
             this.chatUI.destroy();
         }
@@ -309,7 +401,16 @@ class ChatWidget {
         this.button =
             null;
 
+        this.buttonIcon =
+            null;
+
+        this.unreadIndicator =
+            null;
+
         this.isOpen =
+            false;
+
+        this.hasUnread =
             false;
     }
 }

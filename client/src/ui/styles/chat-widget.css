@@ -14,8 +14,8 @@
 .chat-widget {
     position: fixed;
 
-    right: 18px;
-    bottom: 18px;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
 
     z-index: 1100;
 
@@ -24,6 +24,8 @@
     flex-direction: column;
 
     align-items: flex-end;
+
+    gap: 8px;
 
     pointer-events: none;
 
@@ -41,7 +43,7 @@
  *
  * Сам ChatUI управляет содержимым,
  * а Widget отвечает только за его
- * расположение над кнопкой.
+ * расположение рядом с кнопкой HUD.
  */
 
 .chat-widget-panel {
@@ -62,7 +64,7 @@
     position: relative;
 
     width: 48px;
-    height: 48px;
+    height: 34px;
 
     margin: 0;
 
@@ -74,19 +76,13 @@
 
     cursor: pointer;
 
-    border: 2px solid;
+    border: 1px solid rgba(255, 255, 255, 0.16);
 
-    border-top-color: #ffffff;
-    border-left-color: #ffffff;
+    border-radius: 14px;
 
-    border-right-color: #404040;
-    border-bottom-color: #404040;
+    background: rgba(17, 19, 24, 0.88);
 
-    border-radius: 0;
-
-    background: #c0c0c0;
-
-    color: #000000;
+    color: #ffffff;
 
     font-family:
         "MS Sans Serif",
@@ -95,16 +91,16 @@
         Arial,
         sans-serif;
 
-    font-size: 22px;
+    font-size: 18px;
 
     font-weight: normal;
 
-    line-height: 44px;
+    line-height: 1;
 
     text-align: center;
 
     box-shadow:
-        1px 1px 0 #000000;
+        0 6px 18px rgba(0, 0, 0, 0.28);
 
     outline: none;
 
@@ -115,6 +111,48 @@
     user-select: none;
 
     -webkit-user-select: none;
+
+    touch-action: manipulation;
+
+    -webkit-tap-highlight-color: transparent;
+}
+
+.chat-widget-icon {
+    display: block;
+}
+
+.chat-widget-unread {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+
+    width: 9px;
+    height: 9px;
+
+    border: 1px solid rgba(17, 19, 24, 0.95);
+    border-radius: 50%;
+
+    background: #35e879;
+
+    box-shadow: 0 0 8px rgba(53, 232, 121, 0.7);
+}
+
+.chat-widget-unread[hidden] {
+    display: none;
+}
+
+.chat-widget-button.is-pulsing .chat-widget-unread {
+    animation: chat-widget-unread-pulse 900ms ease-out;
+}
+
+@keyframes chat-widget-unread-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(53, 232, 121, 0.8);
+    }
+
+    100% {
+        box-shadow: 0 0 0 8px rgba(53, 232, 121, 0);
+    }
 }
 
 
@@ -173,19 +211,8 @@
  */
 
 .chat-widget-button:active {
-    border-top-color: #404040;
-    border-left-color: #404040;
-
-    border-right-color: #ffffff;
-    border-bottom-color: #ffffff;
-
-    box-shadow: none;
-
     transform:
-        translate(
-            1px,
-            1px
-        );
+        scale(0.94);
 }
 
 
@@ -195,11 +222,9 @@
 
 .chat-widget-button:focus-visible {
     outline:
-        1px dotted
-        #000000;
+        2px solid rgba(255, 255, 255, 0.6);
 
-    outline-offset:
-        -5px;
+    outline-offset: 2px;
 }
 
 
@@ -220,18 +245,8 @@
  */
 
 @media (max-width: 600px) {
-    .chat-widget {
-        right: 12px;
-        bottom: 12px;
-    }
-
     .chat-widget-button {
-        width: 46px;
-        height: 46px;
-
-        font-size: 21px;
-
-        line-height: 42px;
+        font-size: 17px;
     }
 }
 
@@ -241,18 +256,8 @@
  */
 
 @media (max-width: 360px) {
-    .chat-widget {
-        right: 8px;
-        bottom: 8px;
-    }
-
     .chat-widget-button {
-        width: 44px;
-        height: 44px;
-
-        font-size: 20px;
-
-        line-height: 40px;
+        width: 46px;
     }
 }
 
@@ -264,5 +269,9 @@
 @media (prefers-reduced-motion: reduce) {
     .chat-widget-button {
         transform: none;
+    }
+
+    .chat-widget-button.is-pulsing .chat-widget-unread {
+        animation: none;
     }
 }

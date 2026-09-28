@@ -113,6 +113,14 @@ class ChatUI {
 
         this.isOpen =
             false;
+
+        this.onClose =
+            typeof options.onClose === 'function'
+                ? options.onClose
+                : null;
+
+        this.unsubscribeMessages =
+            null;
     }
 
     mountTo(element) {
@@ -131,6 +139,14 @@ class ChatUI {
         this.renderShell();
 
         this.renderMessages();
+
+        if (typeof this.chat.subscribe === 'function') {
+            this.unsubscribeMessages = this.chat.subscribe(message => {
+                if (message.room === this.chat.getRoom()) {
+                    this.renderMessages();
+                }
+            });
+        }
 
         return true;
     }
@@ -400,11 +416,17 @@ class ChatUI {
             return false;
         }
 
+        const wasOpen = this.isOpen;
+
         this.isOpen =
             false;
 
         this.panel.hidden =
             true;
+
+        if (wasOpen && this.onClose) {
+            this.onClose();
+        }
 
         return true;
     }
@@ -474,6 +496,11 @@ class ChatUI {
     }
 
     destroy() {
+        if (this.unsubscribeMessages) {
+            this.unsubscribeMessages();
+            this.unsubscribeMessages = null;
+        }
+
         if (this.mount) {
             this.mount.innerHTML =
                 '';

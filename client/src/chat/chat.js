@@ -21,6 +21,7 @@ class Chat {
             : DEFAULT_ROOM;
 
         this.messages = new Map();
+        this.listeners = new Set();
     }
 
     setRoom(room) {
@@ -38,6 +39,18 @@ class Chat {
 
     getRoom() {
         return this.currentRoom;
+    }
+
+    subscribe(listener) {
+        if (typeof listener !== 'function') {
+            return () => {};
+        }
+
+        this.listeners.add(listener);
+
+        return () => {
+            this.listeners.delete(listener);
+        };
     }
 
     send(text, options = {}) {
@@ -78,6 +91,14 @@ class Chat {
         };
 
         this.messages.set(id, message);
+
+        for (const listener of this.listeners) {
+            try {
+                listener({ ...message });
+            } catch (error) {
+                console.error('[FREEzzzGames] Chat listener failed:', error);
+            }
+        }
 
         return {
             ...message
