@@ -240,6 +240,59 @@
     outline-offset: 2px;
 }
 
+.world-zoom-controls {
+    position: absolute;
+
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(18px, calc(env(safe-area-inset-bottom) + 18px));
+
+    z-index: 120;
+
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    pointer-events: auto;
+}
+
+.world-zoom-button {
+    width: 44px;
+    height: 44px;
+
+    display: grid;
+    place-items: center;
+
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 14px;
+
+    background: rgba(13, 20, 29, .84);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, .3);
+
+    color: #fff;
+
+    font: 700 24px/1 system-ui, sans-serif;
+
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+
+    backdrop-filter: blur(10px);
+
+    transition:
+        transform 100ms ease,
+        background 100ms ease;
+}
+
+.world-zoom-button:active {
+    transform: scale(.92);
+    background: rgba(35, 49, 66, .96);
+}
+
+.world-zoom-button:focus-visible {
+    outline: 2px solid rgba(83, 231, 255, .55);
+    outline-offset: 2px;
+}
+
 .world-hint {
     position: absolute;
 
@@ -331,8 +384,8 @@
 .world-farm {
     display: flex;
 
-    width: 150px;
-    min-height: 130px;
+    width: 164px;
+    min-height: 142px;
 
     padding: 18px;
 
@@ -392,8 +445,8 @@
 .world-locked-upgrade {
     display: flex;
 
-    width: 118px;
-    min-height: 116px;
+    width: 132px;
+    min-height: 126px;
 
     padding: 12px;
 
@@ -556,9 +609,20 @@
         left: 10px;
     }
 
+    .world-zoom-controls {
+        right: max(10px, env(safe-area-inset-right));
+        bottom: max(72px, calc(env(safe-area-inset-bottom) + 72px));
+    }
+
+    .world-zoom-button {
+        width: 46px;
+        height: 46px;
+        border-radius: 15px;
+    }
+
     .world-farm {
-        width: 140px;
-        min-height: 120px;
+        width: 154px;
+        min-height: 134px;
     }
 
     .object-icon {
@@ -566,8 +630,8 @@
     }
 
     .world-locked-upgrade {
-        width: 104px;
-        min-height: 104px;
+        width: 118px;
+        min-height: 114px;
 
         padding: 10px;
     }
