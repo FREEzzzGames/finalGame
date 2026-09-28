@@ -8,41 +8,19 @@
  * - обнаружить Telegram WebApp;
  * - выполнить базовую инициализацию;
  * - предоставить безопасный доступ к API;
- * - получить проверенный сервером профиль игрока;
  * - не смешивать Telegram-логику с игровой логикой.
  *
  * ВАЖНО:
  * initDataUnsafe НЕ используется для авторизации.
  * Авторизация и проверка пользователя выполняются сервером.
  *
- * API:
- * - по умолчанию используется публичный FREEzzzGames backend;
- * - внешний backend может быть задан через
- *   window.__FREEZZGAMES_API_BASE_URL__.
+ * Серверные запросы выполняются отдельными API/Session модулями.
  */
-
-const DEFAULT_API_BASE_URL =
-    'https://universe-fjwj.onrender.com/api';
 
 const TelegramAdapter = (() => {
     let webApp = null;
     let initialized = false;
-
-    const getApiBaseUrl = () => {
-        if (
-            typeof window !== 'undefined' &&
-            typeof window.__FREEZZGAMES_API_BASE_URL__ === 'string'
-        ) {
-            const value =
-                window.__FREEZZGAMES_API_BASE_URL__.trim();
-
-            if (value.length > 0) {
-                return value.replace(/\/+$/, '');
-            }
-        }
-
-        return DEFAULT_API_BASE_URL;
-    };
+    let readyCalled = false;
 
     function detect() {
         if (
@@ -67,21 +45,22 @@ const TelegramAdapter = (() => {
             return null;
         }
 
+        initialized = true;
+        return webApp;
+    }
+
+    function ready() {
+        if (!webApp || readyCalled || typeof webApp.ready !== 'function') {
+            return false;
+        }
+
         try {
-            if (typeof webApp.ready === 'function') {
-                webApp.ready();
-            }
-
-            initialized = true;
-
-            return webApp;
+            webApp.ready();
+            readyCalled = true;
+            return true;
         } catch (error) {
-            console.error(
-                '[FREEzzzGames] Telegram initialization failed:',
-                error
-            );
-
-            return null;
+            console.warn('[FREEzzzGames] Telegram ready warning:', error);
+            return false;
         }
     }
 
@@ -130,10 +109,6 @@ const TelegramAdapter = (() => {
         return initialized;
     }
 
-    function getWebApp() {
-        return webApp;
-    }
-
     function getInitData() {
         if (
             !webApp ||
@@ -143,143 +118,6 @@ const TelegramAdapter = (() => {
         }
 
         return webApp.initData;
-    }
-
-    async function authenticate() {
-        const initData =
-            getInitData();
-
-        if (!initData) {
-            return {
-                authenticated: false,
-                profile: null,
-                state: null,
-                error: 'TELEGRAM_INIT_DATA_MISSING'
-            };
-        }
-
-        const apiBaseUrl =
-            getApiBaseUrl();
-
-        const stateUrl =
-            `${apiBaseUrl}/state`;
-
-        try {
-            const response =
-                await fetch(
-                    stateUrl,
-                    {
-                        method: 'GET',
-
-                        headers: {
-                            'x-telegram-init-data':
-                                initData,
-
-                            'Accept':
-                                'application/json'
-                        },
-
-                        /*
-                         * Для отдельного backend
-                         * авторизация выполняется через
-                         * Telegram initData header.
-                         *
-                         * Cookies backend здесь
-                         * не являются источником
-                         * идентификации пользователя.
-                         */
-                        credentials:
-                            'omit'
-                    }
-                );
-
-            let payload = null;
-
-            try {
-                payload =
-                    await response.json();
-            } catch {
-                payload = null;
-            }
-
-            if (!response.ok) {
-                return {
-                    authenticated: false,
-                    profile: null,
-                    state: null,
-                    error:
-                        payload &&
-                        typeof payload.error === 'string'
-                            ? payload.error
-                            : `HTTP_${response.status}`
-                };
-            }
-
-            if (
-                !payload ||
-                typeof payload !== 'object'
-            ) {
-                return {
-                    authenticated: false,
-                    profile: null,
-                    state: null,
-                    error: 'INVALID_SERVER_RESPONSE'
-                };
-            }
-
-            /*
-             * Server API response:
-             *
-             * {
-             *     ok: true,
-             *     data: {
-             *         profile: {},
-             *         state: {}
-             *     }
-             * }
-             *
-             * Поддерживаем только серверный
-             * формат ответа.
-             */
-            const data =
-                payload.data;
-
-            if (
-                !data ||
-                typeof data !== 'object'
-            ) {
-                return {
-                    authenticated: false,
-                    profile: null,
-                    state: null,
-                    error: 'INVALID_SERVER_RESPONSE_DATA'
-                };
-            }
-
-            return {
-                authenticated: true,
-
-                profile:
-                    data.profile || null,
-
-                state:
-                    data.state || null,
-
-                error: null
-            };
-        } catch (error) {
-            console.error(
-                '[FREEzzzGames] Telegram authentication request failed:',
-                error
-            );
-
-            return {
-                authenticated: false,
-                profile: null,
-                state: null,
-                error: 'TELEGRAM_AUTH_REQUEST_FAILED'
-            };
-        }
     }
 
     function getVersion() {
@@ -304,6 +142,25 @@ const TelegramAdapter = (() => {
         }
 
         return webApp.colorScheme || null;
+    }
+
+    function getTheme() {
+        return Object.freeze({
+            colorScheme: getColorScheme(),
+            params: Object.freeze({
+                ...(webApp?.themeParams || {})
+            })
+        });
+    }
+
+    function getSafeAreaInset() {
+        const inset = webApp?.safeAreaInset || {};
+        return Object.freeze({
+            top: Number(inset.top) || 0,
+            right: Number(inset.right) || 0,
+            bottom: Number(inset.bottom) || 0,
+            left: Number(inset.left) || 0
+        });
     }
 
     function isExpanded() {
@@ -340,6 +197,110 @@ const TelegramAdapter = (() => {
         return Number.isFinite(height) && height > 0
             ? height
             : null;
+    }
+
+    function getViewport() {
+        return Object.freeze({
+            height: getViewportHeight(),
+            stableHeight: getViewportStableHeight()
+        });
+    }
+
+    function subscribeEvent(eventName, callback) {
+        if (
+            !webApp ||
+            typeof callback !== 'function' ||
+            typeof webApp.onEvent !== 'function'
+        ) {
+            return () => {};
+        }
+
+        try {
+            webApp.onEvent(eventName, callback);
+            return () => {
+                try {
+                    if (typeof webApp.offEvent === 'function') {
+                        webApp.offEvent(eventName, callback);
+                    }
+                } catch (error) {
+                    console.warn(`[FREEzzzGames] Telegram ${eventName} cleanup warning:`, error);
+                }
+            };
+        } catch (error) {
+            console.warn(`[FREEzzzGames] Telegram ${eventName} listener warning:`, error);
+            return () => {};
+        }
+    }
+
+    function onThemeChanged(callback) {
+        return subscribeEvent('themeChanged', callback);
+    }
+
+    function onLifecycle(callback) {
+        if (typeof callback !== 'function') return () => {};
+
+        let lastActive = null;
+        const notify = active => {
+            if (lastActive === active) return;
+            lastActive = active;
+            callback(Object.freeze({ active }));
+        };
+        const onVisibilityChanged = () => {
+            if (typeof document !== 'undefined') {
+                notify(document.visibilityState !== 'hidden');
+            }
+        };
+        const cleanups = [
+            subscribeEvent('activated', () => notify(true)),
+            subscribeEvent('deactivated', () => notify(false))
+        ];
+
+        if (typeof document !== 'undefined') {
+            document.addEventListener('visibilitychange', onVisibilityChanged);
+            onVisibilityChanged();
+        }
+
+        return () => {
+            cleanups.forEach(cleanup => cleanup());
+            if (typeof document !== 'undefined') {
+                document.removeEventListener('visibilitychange', onVisibilityChanged);
+            }
+        };
+    }
+
+    function getHapticFeedback() {
+        return webApp?.HapticFeedback || null;
+    }
+
+    function triggerHaptic(method, value) {
+        const haptics = getHapticFeedback();
+        const handler = haptics?.[method];
+        if (typeof handler !== 'function') return false;
+
+        try {
+            if (value === undefined) handler.call(haptics);
+            else handler.call(haptics, value);
+            return true;
+        } catch (error) {
+            console.warn(`[FREEzzzGames] Telegram ${method} warning:`, error);
+            return false;
+        }
+    }
+
+    function triggerImpact(style) {
+        return triggerHaptic('impactOccurred', style);
+    }
+
+    function triggerNotification(type) {
+        return triggerHaptic('notificationOccurred', type);
+    }
+
+    function triggerSelection() {
+        return triggerHaptic('selectionChanged');
+    }
+
+    function isHapticsAvailable() {
+        return getHapticFeedback() !== null;
     }
 
     function onViewportChanged(callback) {
@@ -480,19 +441,28 @@ const TelegramAdapter = (() => {
 
     return Object.freeze({
         init,
+        initialize: init,
+        ready,
         expand,
         isAvailable,
         isInitialized,
-        getWebApp,
         getInitData,
-        authenticate,
         getVersion,
         getPlatform,
         getColorScheme,
+        getTheme,
+        getSafeAreaInset,
         isExpanded,
+        getViewport,
         getViewportHeight,
         getViewportStableHeight,
         onViewportChanged,
+        onThemeChanged,
+        onLifecycle,
+        isHapticsAvailable,
+        triggerImpact,
+        triggerNotification,
+        triggerSelection,
         setHeaderColor,
         setBackgroundColor,
         close

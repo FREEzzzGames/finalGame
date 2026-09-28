@@ -13,33 +13,13 @@
  * Haptics не являются обязательными для работы игры.
  */
 
-function getHapticFeedback() {
-    if (
-        typeof window === 'undefined' ||
-        !window.Telegram ||
-        !window.Telegram.WebApp ||
-        !window.Telegram.WebApp.HapticFeedback
-    ) {
-        return null;
-    }
-
-    return window.Telegram.WebApp.HapticFeedback;
-}
+import TelegramAdapter from './telegram.js?v=0.4.0';
 
 function isAvailable() {
-    return getHapticFeedback() !== null;
+    return TelegramAdapter.isHapticsAvailable();
 }
 
 function impact(style = 'light') {
-    const haptics = getHapticFeedback();
-
-    if (
-        !haptics ||
-        typeof haptics.impactOccurred !== 'function'
-    ) {
-        return false;
-    }
-
     const allowedStyles = [
         'light',
         'medium',
@@ -52,29 +32,10 @@ function impact(style = 'light') {
         ? style
         : 'light';
 
-    try {
-        haptics.impactOccurred(safeStyle);
-        return true;
-    } catch (error) {
-        console.warn(
-            '[FREEzzzGames] Haptic impact error:',
-            error
-        );
-
-        return false;
-    }
+    return TelegramAdapter.triggerImpact(safeStyle);
 }
 
 function notification(type = 'success') {
-    const haptics = getHapticFeedback();
-
-    if (
-        !haptics ||
-        typeof haptics.notificationOccurred !== 'function'
-    ) {
-        return false;
-    }
-
     const allowedTypes = [
         'error',
         'success',
@@ -85,40 +46,11 @@ function notification(type = 'success') {
         ? type
         : 'success';
 
-    try {
-        haptics.notificationOccurred(safeType);
-        return true;
-    } catch (error) {
-        console.warn(
-            '[FREEzzzGames] Haptic notification error:',
-            error
-        );
-
-        return false;
-    }
+    return TelegramAdapter.triggerNotification(safeType);
 }
 
 function selection() {
-    const haptics = getHapticFeedback();
-
-    if (
-        !haptics ||
-        typeof haptics.selectionChanged !== 'function'
-    ) {
-        return false;
-    }
-
-    try {
-        haptics.selectionChanged();
-        return true;
-    } catch (error) {
-        console.warn(
-            '[FREEzzzGames] Haptic selection error:',
-            error
-        );
-
-        return false;
-    }
+    return TelegramAdapter.triggerSelection();
 }
 
 const TelegramHaptics = Object.freeze({

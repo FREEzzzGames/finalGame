@@ -7,12 +7,14 @@
  * Browser mode is supported without Telegram authentication.
  */
 
-import TelegramAdapter from '../telegram/telegram.js?v=0.3.0';
+import TelegramAdapter from '../telegram/telegram.js?v=0.4.0';
+import TelegramTheme from '../telegram/theme.js?v=0.2.0';
+import Session from '../session/session.js?v=0.1.0';
 import World from '../world/world.js?v=0.4.0';
 import ChatWidget from '../chat/chat-widget.js?v=0.3.0';
 import LoreWidget from '../lore/lore-widget.js?v=0.4.0';
 
-const APP_VERSION = '0.4.0';
+const APP_VERSION = '0.5.0';
 
 const appRoot = document.querySelector('#app');
 const bootScreen = document.querySelector('#boot-screen');
@@ -23,6 +25,7 @@ let chatWidget = null;
 let loreWidget = null;
 let playerSession = null;
 let unsubscribeTelegramViewport = null;
+let unsubscribeTelegramLifecycle = null;
 let startupStage = 'Application startup';
 
 function setBootStatus(message, isError = false) {
@@ -38,8 +41,7 @@ function setAppData(name, value) {
 }
 
 function applyTelegramViewport() {
-    const height = TelegramAdapter.getViewportHeight();
-    const stableHeight = TelegramAdapter.getViewportStableHeight();
+    const { height, stableHeight } = TelegramAdapter.getViewport();
 
     if (Number.isFinite(height) && height > 0) {
         document.documentElement.style.setProperty(
@@ -55,10 +57,7 @@ function applyTelegramViewport() {
         );
     }
 
-    const webApp = TelegramAdapter.getWebApp();
-    if (!webApp) return;
-
-    const safeArea = webApp.safeAreaInset || {};
+    const safeArea = TelegramAdapter.getSafeAreaInset();
 
     for (const [name, value] of [
         ['top', safeArea.top],
@@ -78,20 +77,26 @@ function notifyLayoutChanged() {
 }
 
 function initializeTelegram() {
-    const telegram = TelegramAdapter.init();
+    const telegram = TelegramAdapter.initialize();
 
     if (!telegram) {
         setAppData('runtime', 'browser');
         setAppData('telegramAuthenticated', 'false');
+        TelegramTheme.initializeTheme();
         return null;
     }
 
-    setAppData('runtime', 'telegram');
+    setAppData('runtime', TelegramAdapter.isAvailable() ? 'telegram' : 'browser');
+    TelegramTheme.initializeTheme();
 
     applyTelegramViewport();
 
     if (unsubscribeTelegramViewport) {
         unsubscribeTelegramViewport();
+    }
+
+    if (unsubscribeTelegramLifecycle) {
+        unsubscribeTelegramLifecycle();
     }
 
     unsubscribeTelegramViewport =
@@ -104,6 +109,11 @@ function initializeTelegram() {
             }
         });
 
+    unsubscribeTelegramLifecycle = TelegramAdapter.onLifecycle(({ active }) => {
+        setAppData('active', active);
+        if (active) notifyLayoutChanged();
+    });
+
     TelegramAdapter.expand();
     applyTelegramViewport();
 
@@ -115,35 +125,16 @@ function initializeTelegram() {
     return telegram;
 }
 
-async function authenticateTelegram() {
-    if (!TelegramAdapter.isAvailable()) {
-        setAppData('telegramAuthenticated', 'false');
-        return null;
-    }
-
+async function initializeSession() {
     setBootStatus('Connecting…');
+    const session = await Session.initialize();
+    setAppData('telegramAuthenticated', session.authenticated);
 
-    try {
-        const session = await TelegramAdapter.authenticate();
-
-        if (!session || !session.authenticated) {
-            setAppData('telegramAuthenticated', 'false');
-
-            console.warn(
-                '[FREEzzzGames] Telegram authentication unavailable:',
-                session?.error || 'UNKNOWN_ERROR'
-            );
-
-            return null;
-        }
-
-        setAppData('telegramAuthenticated', 'true');
-        return session;
-    } catch (error) {
-        setAppData('telegramAuthenticated', 'false');
-        console.warn('[FREEzzzGames] Telegram authentication failed:', error);
-        return null;
+    if (session.error) {
+        console.warn('[FREEzzzGames] Session initialization unavailable:', session.error);
     }
+
+    return session;
 }
 
 function createMount(id, className) {
@@ -225,6 +216,7 @@ function startLore() {
 }
 
 function finishBoot() {
+    TelegramAdapter.ready();
     setAppData('appVersion', APP_VERSION);
     setAppData('initialized', 'true');
 
@@ -275,8 +267,8 @@ async function startApp() {
 
     initializeTelegram();
 
-    startupStage = 'Telegram authentication';
-    playerSession = await authenticateTelegram();
+    startupStage = 'Session initialization';
+    playerSession = await initializeSession();
 
     startupStage = 'World startup';
     setBootStatus('Starting World…');

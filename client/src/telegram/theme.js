@@ -15,40 +15,16 @@
  * не должны зависеть от этого модуля.
  */
 
-function getTelegramWebApp() {
-    if (
-        typeof window === 'undefined' ||
-        !window.Telegram ||
-        !window.Telegram.WebApp
-    ) {
-        return null;
-    }
+import TelegramAdapter from './telegram.js?v=0.4.0';
 
-    return window.Telegram.WebApp;
-}
+let unsubscribeTheme = null;
 
 function getColorScheme() {
-    const telegram = getTelegramWebApp();
-
-    if (!telegram) {
-        return 'light';
-    }
-
-    return telegram.colorScheme === 'dark'
-        ? 'dark'
-        : 'light';
+    return TelegramAdapter.getTheme().colorScheme || 'light';
 }
 
 function getThemeParams() {
-    const telegram = getTelegramWebApp();
-
-    if (!telegram || !telegram.themeParams) {
-        return Object.freeze({});
-    }
-
-    return Object.freeze({
-        ...telegram.themeParams
-    });
+    return TelegramAdapter.getTheme().params;
 }
 
 function applyTheme() {
@@ -108,24 +84,8 @@ function applyTheme() {
 function initializeTheme() {
     applyTheme();
 
-    const telegram = getTelegramWebApp();
-
-    if (
-        telegram &&
-        typeof telegram.onEvent === 'function'
-    ) {
-        try {
-            telegram.onEvent(
-                'themeChanged',
-                applyTheme
-            );
-        } catch (error) {
-            console.warn(
-                '[FREEzzzGames] Telegram theme listener error:',
-                error
-            );
-        }
-    }
+    if (unsubscribeTheme) unsubscribeTheme();
+    unsubscribeTheme = TelegramAdapter.onThemeChanged(applyTheme);
 
     return {
         scheme: getColorScheme(),
