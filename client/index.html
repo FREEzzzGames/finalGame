@@ -141,12 +141,12 @@ w.style.setProperty('--zoom',cam.zoom.toFixed(4));
 function targetFor(i){
 var s=stage(),p=districts[i],z=districtZoom();
 if(!s)return {x:0,y:0,zoom:z};
-return {x:(s.clientWidth/2)-(p.x* z),y:(s.clientHeight/2)-(p.y*z),zoom:z};
+return {x:-(p.x-12000)*z,y:-(p.y-18000)*z,zoom:z};
 }
 function centerTo(i){
 var w=canvas(),s=stage(),p=districts[i],z=districtZoom();
 if(!w||!s)return;
-var tx=(s.clientWidth/2)-(p.x*z),ty=(s.clientHeight/2)-(p.y*z);
+var tx=-(p.x-12000)*z,ty=-(p.y-18000)*z;
 cam.x=tx;cam.y=ty;cam.zoom=z;applyCam();
 }
 function ease(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2}
@@ -173,8 +173,8 @@ function nextForSwipe(dx,dy){
 var ax=Math.abs(dx),ay=Math.abs(dy);
 if(Math.max(ax,ay)<SWIPE_MIN)return -1;
 if(ax>ay){
-if(dx<0){return navIndex===0?2:navIndex===1?4:navIndex===4?2:-1}
-return navIndex===2?0:navIndex===4?1:navIndex===0?2:-1;
+if(dx<0){return navIndex===0?1:navIndex===2?4:navIndex===4?1:navIndex===3?1:-1}
+return navIndex===0?2:navIndex===1?4:navIndex===4?2:navIndex===3?2:-1;
 }
 if(dy<0){
 return navIndex===1?0:navIndex===2?0:navIndex===3?4:navIndex===4?0:-1;
