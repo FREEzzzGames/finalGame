@@ -1,1216 +1,154 @@
 'use strict';
 
 /*
- * FREEzzzGames — Main World.
+ * FREEzzzGames
+ * World state manager
  *
- * Contract:
- * - root is a full-screen mount supplied by app.js;
- * - viewport size comes from the actual DOM viewport;
- * - camera uses world coordinates;
- * - Telegram logic never enters this module;
- * - existing economy, storage, i18n, gestures and objects modules remain intact.
+ * Main World is the core interactive economic plane.
+ * This module manages only world state and movement.
+ * Rendering, gestures, layers, objects and economy
+ * are handled by separate modules.
  */
 
-import gestures from './gestures.js';
-import camera from './camera.js';
-import objects from './objects.js';
-import economy from '../economy/economy.js';
-import storage from '../app/storage.js';
-import i18n from '../i18n/i18n.js';
-import NexusWorldIntegration from '../nexus/world-integration.js';
-
-const WORLD_WIDTH = 24000;
-const WORLD_HEIGHT = 36000;
-
-const DISTRICT_LAYOUT = Object.freeze([
-    { id: 'north-harbor', label: 'NORTH HARBOR', x: 4800, y: 7200, main: 'stadium' },
-    { id: 'old-town', label: 'OLD TOWN', x: 12000, y: 7200, main: 'studio' },
-    { id: 'industrial', label: 'INDUSTRIAL', x: 19200, y: 7200, main: 'workshop' },
-    { id: 'green-valley', label: 'GREEN VALLEY', x: 7200, y: 24600, main: 'farm' },
-    { id: 'market-district', label: 'MARKET DISTRICT', x: 16800, y: 24600, main: 'shopping' }
-]);
-
-const SUPPORT_OFFSETS = Object.freeze([
-    [-1050, -850], [0, -1150], [1050, -850],
-    [-1150, 650], [0, 1050], [1150, 650]
-]);
-
-const COIN_REWARD = 1;
-const FARM_BASE_COST = 10;
-const FARM_LEVEL_REWARD = 2;
-
-const WORLD_LORE_EVENTS = Object.freeze({
-    initialization: Object.freeze({
-        era: 1,
-        titleKey: 'lore.world.initialization.title',
-        textKey: 'lore.world.initialization.text',
-        duration: 9000
-    }),
-
-    firstResource: Object.freeze({
-        era: 1,
-        titleKey: 'lore.world.firstResource.title',
-        textKey: 'lore.world.firstResource.text',
-        duration: 6000
-    }),
-
-    farmOnline: Object.freeze({
-        era: 1,
-        titleKey: 'lore.world.farmOnline.title',
-        textKey: 'lore.world.farmOnline.text',
-        duration: 7000
-    }),
-
-    unknownStructure: Object.freeze({
-        era: 1,
-        titleKey: 'lore.world.unknownStructure.title',
-        textKey: 'lore.world.unknownStructure.text',
-        duration: 8000
-    })
+const DEFAULT_WORLD = Object.freeze({
+    width: 5000,
+    height: 8000,
+    startX: 2500,
+    startY: 4000
 });
 
-const SPHERE_RADIUS_MULTIPLIER = 7.5;
-const SPHERE_MIN_SCALE = 0.88;
-
-const BUILDINGS = Object.freeze({
-    workshop: { id: 'workshop', icon: '⚡', cost: 75, passiveIncome: 1, passiveInterval: 10000, x: 19200, y: 7200 },
-    stadium: { id: 'stadium', icon: '🚇', cost: 400, passiveIncome: 0, passiveInterval: 0, x: 4800, y: 7200 },
-    studio: { id: 'studio', icon: '🌐', cost: 2000, passiveIncome: 0, passiveInterval: 0, x: 12000, y: 7200 },
-    shopping: { id: 'shopping', icon: '🏦', cost: 10000, passiveIncome: 0, passiveInterval: 0, x: 16800, y: 24600 }
-});
-
-const SIDE_BUILDINGS_DISTANCE = 2400;
-
-const SPHERE_RADIUS =
-    SIDE_BUILDINGS_DISTANCE * SPHERE_RADIUS_MULTIPLIER;
+const MIN_ZOOM = 0.75;
+const MAX_ZOOM = 2;
+const DEFAULT_ZOOM = 1;
 
 class World {
-    constructor(root) {
-        if (!root || !(root instanceof HTMLElement)) {
-            throw new Error('[FREEzzzGames] World root is invalid.');
-        }
+    constructor(options = {}) {
+        const width = Number.isFinite(options.width)
+            ? Math.max(1, options.width)
+            : DEFAULT_WORLD.width;
 
-        this.root = root;
-        this.viewport = null;
-        this.scene = null;
-        this.hud = null;
-        this.balanceElement = null;
-        this.hintElement = null;
-        this.languageButton = null;
-        this.worldSwitchButton = null;
+        const height = Number.isFinite(options.height)
+            ? Math.max(1, options.height)
+            : DEFAULT_WORLD.height;
 
-        this.unsubscribeLanguage = null;
-        this.resizeHandler = null;
-        this.pointerDownHandler = null;
-        this.pointerMoveHandler = null;
-        this.pointerUpHandler = null;
-        this.pointerCancelHandler = null;
+        const startX = Number.isFinite(options.startX)
+            ? options.startX
+            : width / 2;
 
-        this.pointerActive = false;
-        this.lastPointer = null;
-        this.activePointers = new Map();
-        this.pinchStartDistance = 0;
-        this.pinchStartZoom = 1;
-        this.dragMoved = false;
-        this.suppressBuildingClick = false;
-        this.zoomMin = 0.72;
-        this.zoomMax = 1.65;
+        const startY = Number.isFinite(options.startY)
+            ? options.startY
+            : height / 2;
 
-        this.farmLevel = 0;
-        this.buildings = {
-            workshop: false,
-            stadium: false,
-            studio: false,
-            shopping: false
+        this.bounds = {
+            width,
+            height
         };
-        this.cityStates = null;
 
-        this.lastSavedAt = 0;
-        this.loreProgress = storage.loadLoreProgress();
-        this.lastTapTime = 0;
-        this.hintTimer = null;
-        this.passiveTimer = null;
-        this.destroyed = false;
-        this.nexusIntegration = new NexusWorldIntegration();
-
-        this.init();
+        this.camera = {
+            x: this.#clamp(startX, 0, width),
+            y: this.#clamp(startY, 0, height),
+            zoom: DEFAULT_ZOOM
+        };
     }
 
-    init() {
-        this.loadSavedState();
-        const side = this.nexusIntegration.initialize(this.cityStates);
-        this.loadCityState(side);
-        this.createStructure();
-        this.createObjects();
-        this.bindEvents();
-
-        this.updateViewport();
-
-        camera.setZoom(
-            Math.min(
-                this.zoomMax,
-                Math.max(
-                    this.zoomMin,
-                    this.viewport?.getBoundingClientRect().width <= 520
-                        ? 1.12
-                        : 1.06
-                )
-            )
-        );
-
-        camera.setPosition(
-            WORLD_WIDTH / 2,
-            WORLD_HEIGHT / 2
-        );
-
-        this.clampCamera();
-
-        this.applyOfflinePassiveIncome();
-        this.startPassiveIncome();
-        this.render();
-
-        if (!this.showLoreEvent('initialization')) {
-            this.showHint(i18n.t('hints.tapFarm'));
-        }
-    }
-
-    loadSavedState() {
-        const state = storage.loadState();
-
-        economy.setBalance(state.balance);
-        this.cityStates = {
-            surface: {
-                ...state.cities.surface,
-                buildings: { ...state.cities.surface.buildings }
+    getState() {
+        return {
+            bounds: {
+                width: this.bounds.width,
+                height: this.bounds.height
             },
-            undercity: {
-                ...state.cities.undercity,
-                buildings: { ...state.cities.undercity.buildings }
+            camera: {
+                x: this.camera.x,
+                y: this.camera.y,
+                zoom: this.camera.zoom
             }
         };
-
-        this.loadCityState(this.nexusIntegration.getSide());
     }
 
-    loadCityState(side) {
-        const city = this.cityStates?.[side] || this.cityStates?.surface;
-        if (!city) return;
+    move(deltaX = 0, deltaY = 0) {
+        const x = Number.isFinite(deltaX) ? deltaX : 0;
+        const y = Number.isFinite(deltaY) ? deltaY : 0;
 
-        this.farmLevel = city.farmLevel;
-        this.buildings = { ...city.buildings };
-        this.lastSavedAt = city.lastSavedAt;
-
-        if (this.scene) {
-            objects.update('farm', { data: { level: this.farmLevel } });
-            for (const id of Object.keys(BUILDINGS)) {
-                objects.update(id, {
-                    data: { level: this.buildings[id] ? 1 : 0 }
-                });
-            }
-        }
-    }
-
-    saveState() {
-        const now = Date.now();
-        this.cityStates[this.nexusIntegration.getSide()] = {
-            farmLevel: this.farmLevel,
-            buildings: { ...this.buildings },
-            lastSavedAt: now
-        };
-
-        for (const city of Object.values(this.cityStates)) {
-            city.lastSavedAt = now;
-        }
-
-        storage.saveState({
-            balance: economy.getBalance(),
-            cities: this.cityStates,
-            lastSavedAt: now
-        });
-
-        this.lastSavedAt = now;
-    }
-
-    createStructure() {
-        this.root.innerHTML = '';
-        this.root.className = 'game-world';
-
-        this.viewport = document.createElement('div');
-        this.viewport.className = 'world-viewport';
-
-        this.scene = document.createElement('div');
-        this.scene.className = 'world-scene';
-
-        this.hud = document.createElement('div');
-        this.hud.className = 'world-hud';
-
-        this.balanceElement = document.createElement('div');
-        this.balanceElement.className = 'world-balance';
-
-        this.worldSwitchButton = document.createElement('button');
-        this.worldSwitchButton.type = 'button';
-        this.worldSwitchButton.className = 'world-switch-button';
-        this.nexusIntegration.bindWorldSwitch(this.worldSwitchButton, this);
-
-        this.hintElement = document.createElement('div');
-        this.hintElement.className = 'world-hint';
-
-        this.zoomControls = document.createElement('div');
-        this.zoomControls.className = 'world-zoom-controls';
-
-        this.zoomOutButton = document.createElement('button');
-        this.zoomOutButton.type = 'button';
-        this.zoomOutButton.className = 'world-zoom-button';
-        this.zoomOutButton.textContent = '−';
-        this.zoomOutButton.setAttribute('aria-label', 'Zoom out');
-
-        this.zoomInButton = document.createElement('button');
-        this.zoomInButton.type = 'button';
-        this.zoomInButton.className = 'world-zoom-button';
-        this.zoomInButton.textContent = '+';
-        this.zoomInButton.setAttribute('aria-label', 'Zoom in');
-
-        this.zoomControls.append(
-            this.zoomOutButton,
-            this.zoomInButton
+        this.camera.x = this.#clamp(
+            this.camera.x + x,
+            0,
+            this.bounds.width
         );
 
-        const changeZoom = delta => {
-            const nextZoom = Math.min(
-                this.zoomMax,
-                Math.max(
-                    this.zoomMin,
-                    camera.zoom + delta
-                )
-            );
-
-            camera.setZoom(nextZoom);
-            this.clampCamera();
-            this.render();
-        };
-
-        this.zoomOutButton.addEventListener('click', event => {
-            event.stopPropagation();
-            changeZoom(-0.12);
-        });
-
-        this.zoomInButton.addEventListener('click', event => {
-            event.stopPropagation();
-            changeZoom(0.12);
-        });
-
-        this.languageButton = document.createElement('button');
-        this.languageButton.type = 'button';
-        this.languageButton.className = 'world-language-button';
-
-        this.languageButton.addEventListener('click', event => {
-            event.stopPropagation();
-            i18n.nextLanguage();
-        });
-
-        this.hud.append(
-            this.languageButton,
-            this.balanceElement,
-            this.worldSwitchButton,
-            this.hintElement,
-            this.zoomControls
+        this.camera.y = this.#clamp(
+            this.camera.y + y,
+            0,
+            this.bounds.height
         );
 
-        this.unsubscribeLanguage = i18n.subscribe(() => {
-            this.updateLocalization();
-            this.render();
-        });
-
-        this.updateLocalization();
-
-        this.viewport.append(this.scene);
-        this.root.append(this.viewport, this.hud);
+        return this.getState();
     }
 
-    createObjects() {
-        this.scene.innerHTML = '';
-        objects.clear();
+    setPosition(x, y) {
+        if (Number.isFinite(x)) {
+            this.camera.x = this.#clamp(
+                x,
+                0,
+                this.bounds.width
+            );
+        }
 
-        this.createMapArt();
-        this.createBuildingElement('farm', '🏙️', 150, 130);
-        objects.add({ id: 'farm', type: 'building', x: 7200, y: 24600, layer: 'buildings', data: { level: this.farmLevel } });
+        if (Number.isFinite(y)) {
+            this.camera.y = this.#clamp(
+                y,
+                0,
+                this.bounds.height
+            );
+        }
 
-        Object.values(BUILDINGS).forEach(building => {
-            this.createBuildingElement(building.id, building.icon, 118, 116);
-            objects.add({ id: building.id, type: 'building', x: building.x, y: building.y, layer: 'buildings', data: { level: this.buildings[building.id] ? 1 : 0, cost: building.cost } });
-        });
-
-        this.createSupportBuildings();
+        return this.getState();
     }
 
-    createMapArt() {
-        const svgNS = 'http://www.w3.org/2000/svg';
-        const svg = document.createElementNS(svgNS, 'svg');
-        svg.classList.add('world-map-art');
-        svg.setAttribute('viewBox', '0 0 ' + WORLD_WIDTH + ' ' + WORLD_HEIGHT);
-        svg.setAttribute('aria-hidden', 'true');
+    setZoom(zoom) {
+        if (!Number.isFinite(zoom)) {
+            return this.getState();
+        }
 
-        const defs = document.createElementNS(svgNS, 'defs');
-        const land = document.createElementNS(svgNS, 'linearGradient');
-        land.id = 'land-gradient'; land.setAttribute('x1', '0'); land.setAttribute('y1', '0'); land.setAttribute('x2', '1'); land.setAttribute('y2', '1');
-        const landA = document.createElementNS(svgNS, 'stop'); landA.setAttribute('offset', '0'); landA.setAttribute('stop-color', '#30452f');
-        const landB = document.createElementNS(svgNS, 'stop'); landB.setAttribute('offset', '1'); landB.setAttribute('stop-color', '#17251d');
-        land.append(landA, landB);
-        const water = document.createElementNS(svgNS, 'linearGradient');
-        water.id = 'water-gradient'; water.setAttribute('x1', '0'); water.setAttribute('y1', '0'); water.setAttribute('x2', '1'); water.setAttribute('y2', '1');
-        const waterA = document.createElementNS(svgNS, 'stop'); waterA.setAttribute('offset', '0'); waterA.setAttribute('stop-color', '#244d62');
-        const waterB = document.createElementNS(svgNS, 'stop'); waterB.setAttribute('offset', '1'); waterB.setAttribute('stop-color', '#102b3b');
-        water.append(waterA, waterB); defs.append(land, water); svg.append(defs);
-
-        const background = document.createElementNS(svgNS, 'rect');
-        background.setAttribute('width', WORLD_WIDTH); background.setAttribute('height', WORLD_HEIGHT); background.setAttribute('fill', 'url(#land-gradient)'); svg.append(background);
-
-        const river = document.createElementNS(svgNS, 'path');
-        river.setAttribute('d', 'M -500 9400 C 4300 7600 7100 10800 10400 9800 S 16600 7600 18600 10300 S 22700 12900 24500 11200 L 24500 14800 C 22100 16400 19400 14700 17300 13700 S 11900 12400 10100 13400 S 4900 14700 -500 12800 Z');
-        river.setAttribute('fill', 'url(#water-gradient)'); river.setAttribute('opacity', '.92'); svg.append(river);
-
-        const road = (d, width, opacity) => {
-            const path = document.createElementNS(svgNS, 'path');
-            path.setAttribute('d', d); path.setAttribute('fill', 'none'); path.setAttribute('stroke', '#b8aa8e'); path.setAttribute('stroke-width', String(width)); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('opacity', opacity || '.92'); return path;
-        };
-        svg.append(
-            road('M 12000 0 L 12000 36000', 520),
-            road('M 0 17400 C 5200 16800 7800 17700 12000 17400 S 19100 18000 24000 17100', 520),
-            road('M 2400 7200 L 21600 7200', 360), road('M 3600 24600 L 20400 24600', 360),
-            road('M 4800 7200 L 7200 24600', 300), road('M 19200 7200 L 16800 24600', 300),
-            road('M 12000 0 L 12000 36000', 90, '.55'),
-            road('M 0 17400 C 5200 16800 7800 17700 12000 17400 S 19100 18000 24000 17100', 90, '.55'),
-            road('M 2400 7200 L 21600 7200', 70, '.55'), road('M 3600 24600 L 20400 24600', 70, '.55')
+        this.camera.zoom = this.#clamp(
+            zoom,
+            MIN_ZOOM,
+            MAX_ZOOM
         );
 
-        DISTRICT_LAYOUT.forEach((district, index) => {
-            const zone = document.createElementNS(svgNS, 'rect');
-            zone.setAttribute('x', String(district.x - 2700)); zone.setAttribute('y', String(district.y - 2300)); zone.setAttribute('width', '5400'); zone.setAttribute('height', '4600'); zone.setAttribute('rx', '620');
-            zone.setAttribute('fill', index % 2 ? '#52604b' : '#455641'); zone.setAttribute('opacity', '.48'); svg.append(zone);
-            const ring = document.createElementNS(svgNS, 'circle');
-            ring.setAttribute('cx', String(district.x)); ring.setAttribute('cy', String(district.y)); ring.setAttribute('r', '2050'); ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', '#d8c9a6'); ring.setAttribute('stroke-width', '46'); ring.setAttribute('opacity', '.35'); svg.append(ring);
-        });
-        this.scene.appendChild(svg);
+        return this.getState();
     }
 
-    createSupportBuildings() {
-        DISTRICT_LAYOUT.forEach(district => {
-            SUPPORT_OFFSETS.forEach((offset, index) => {
-                const element = document.createElement('div');
-                element.className = 'world-support-building support-' + ((index % 3) + 1);
-                element.style.left = (district.x + offset[0]) + 'px';
-                element.style.top = (district.y + offset[1]) + 'px';
-                element.innerHTML = '<span class="support-roof"></span><span class="support-body"></span><span class="support-windows"></span>';
-                this.scene.appendChild(element);
-            });
-            const label = document.createElement('div');
-            label.className = 'world-district-label'; label.style.left = district.x + 'px'; label.style.top = (district.y - 1900) + 'px'; label.textContent = district.label; this.scene.appendChild(label);
-        });
-    }
-
-    createBuildingElement(id, icon, width, height) {
-        const element = document.createElement('button');
-
-        element.type = 'button';
-        element.dataset.objectId = id;
-
-        if (id === 'farm') {
-            element.className = 'world-object world-farm';
-
-            element.innerHTML = `
-                <span class="object-icon">${icon}</span>
-                <span class="object-title"></span>
-                <span class="object-level"></span>
-            `;
-
-            element.addEventListener('click', event => {
-                event.stopPropagation();
-
-                if (this.suppressBuildingClick) {
-                    return;
-                }
-
-                this.interactWithFarm();
-            });
-        } else {
-            element.className = 'world-object world-locked-upgrade world-main-' + id;
-
-            element.innerHTML = `
-                <span class="locked-icon">${icon}</span>
-                <span class="locked-title"></span>
-                <span class="locked-price"></span>
-                <span class="locked-state">🔒</span>
-            `;
-
-            element.addEventListener('click', event => {
-                event.stopPropagation();
-
-                if (this.suppressBuildingClick) {
-                    return;
-                }
-
-                this.interactWithBuilding(id);
-            });
-        }
-
-        element.style.width = `${width}px`;
-        element.style.minHeight = `${height}px`;
-
-        this.scene.appendChild(element);
-    }
-
-    bindEvents() {
-        this.pointerDownHandler = event => {
-            if (
-                this.destroyed ||
-                (event.button > 0 && event.pointerType === 'mouse')
-            ) {
-                return;
-            }
-
-            this.activePointers.set(event.pointerId, {
-                x: event.clientX,
-                y: event.clientY
-            });
-
-            this.pointerActive = true;
-            this.dragMoved = false;
-
-            try {
-                this.viewport.setPointerCapture(event.pointerId);
-            } catch {}
-
-            if (this.activePointers.size >= 2) {
-                const points = [...this.activePointers.values()];
-                const dx = points[1].x - points[0].x;
-                const dy = points[1].y - points[0].y;
-
-                this.pinchStartDistance = Math.hypot(dx, dy);
-                this.pinchStartZoom = camera.zoom;
-                gestures.cancel();
-                return;
-            }
-
-            this.lastPointer = {
-                x: event.clientX,
-                y: event.clientY
-            };
-
-            gestures.start(
-                event.clientX,
-                event.clientY,
-                event.timeStamp
-            );
-        };
-
-        this.pointerMoveHandler = event => {
-            if (!this.pointerActive) return;
-
-            if (this.activePointers.has(event.pointerId)) {
-                this.activePointers.set(event.pointerId, {
-                    x: event.clientX,
-                    y: event.clientY
-                });
-            }
-
-            if (this.activePointers.size >= 2) {
-                const points = [...this.activePointers.values()];
-                const dx = points[1].x - points[0].x;
-                const dy = points[1].y - points[0].y;
-                const distance = Math.max(1, Math.hypot(dx, dy));
-
-                if (this.pinchStartDistance <= 0) {
-                    this.pinchStartDistance = distance;
-                    this.pinchStartZoom = camera.zoom;
-                }
-
-                const nextZoom =
-                    this.pinchStartZoom *
-                    (distance / this.pinchStartDistance);
-
-                camera.setZoom(
-                    Math.min(
-                        this.zoomMax,
-                        Math.max(this.zoomMin, nextZoom)
-                    )
-                );
-
-                this.dragMoved = true;
-                this.suppressBuildingClick = true;
-                this.clampCamera();
-                this.render();
-                return;
-            }
-
-            const result = gestures.move(
-                event.clientX,
-                event.clientY,
-                event.timeStamp
-            );
-
-            if (!result || result.type !== 'move') return;
-
-            if (
-                Math.hypot(
-                    result.totalDeltaX,
-                    result.totalDeltaY
-                ) >= 10
-            ) {
-                this.dragMoved = true;
-                this.suppressBuildingClick = true;
-
-                window.clearTimeout(this.suppressBuildingClickTimer);
-                this.suppressBuildingClickTimer = window.setTimeout(() => {
-                    this.suppressBuildingClick = false;
-                }, 180);
-            }
-
-            camera.move(
-                -result.deltaX / Math.max(camera.zoom, 0.0001),
-                -result.deltaY / Math.max(camera.zoom, 0.0001)
-            );
-
-            this.clampCamera();
-            this.render();
-
-            this.lastPointer = {
-                x: event.clientX,
-                y: event.clientY
-            };
-        };
-
-        this.pointerUpHandler = event => {
-            this.activePointers.delete(event.pointerId);
-
-            if (this.activePointers.size < 2) {
-                this.pinchStartDistance = 0;
-                this.pinchStartZoom = camera.zoom;
-            }
-
-            try {
-                this.viewport.releasePointerCapture(event.pointerId);
-            } catch {}
-
-            if (this.activePointers.size === 1) {
-                const remaining = [...this.activePointers.values()][0];
-
-                this.lastPointer = {
-                    x: remaining.x,
-                    y: remaining.y
-                };
-
-                gestures.start(
-                    remaining.x,
-                    remaining.y,
-                    event.timeStamp
-                );
-
-                this.dragMoved = true;
-                this.suppressBuildingClick = true;
-                return;
-            }
-
-            if (this.activePointers.size > 0) {
-                return;
-            }
-
-            if (!this.pointerActive) return;
-
-            this.pointerActive = false;
-
-            const result = gestures.end(
-                event.clientX,
-                event.clientY,
-                event.timeStamp
-            );
-
-            if (result?.type === 'swipe' || this.dragMoved) {
-                this.clampCamera();
-                this.render();
-            }
-
-            this.lastPointer = null;
-
-            if (this.dragMoved) {
-                window.clearTimeout(this.suppressBuildingClickTimer);
-                this.suppressBuildingClickTimer = window.setTimeout(() => {
-                    this.suppressBuildingClick = false;
-                }, 180);
-            }
-        };
-
-        this.pointerCancelHandler = event => {
-            if (event?.pointerId != null) {
-                this.activePointers.delete(event.pointerId);
-            }
-
-            if (this.activePointers.size === 0) {
-                this.pointerActive = false;
-                this.lastPointer = null;
-                this.dragMoved = false;
-                this.pinchStartDistance = 0;
-                gestures.cancel();
-            }
-        };
-
-        this.wheelHandler = event => {
-            if (this.destroyed) return;
-
-            event.preventDefault();
-
-            const delta =
-                event.deltaY > 0
-                    ? -0.08
-                    : 0.08;
-
-            camera.setZoom(
-                Math.min(
-                    this.zoomMax,
-                    Math.max(
-                        this.zoomMin,
-                        camera.zoom + delta
-                    )
-                )
-            );
-
-            this.clampCamera();
-            this.render();
-        };
-
-        this.resizeHandler = () => {
-            if (this.destroyed) return;
-
-            this.updateViewport();
-            this.clampCamera();
-            this.render();
-        };
-
-        this.viewport.addEventListener(
-            'pointerdown',
-            this.pointerDownHandler
+    reset() {
+        this.camera.x = this.#clamp(
+            DEFAULT_WORLD.startX,
+            0,
+            this.bounds.width
         );
 
-        this.viewport.addEventListener(
-            'pointermove',
-            this.pointerMoveHandler
+        this.camera.y = this.#clamp(
+            DEFAULT_WORLD.startY,
+            0,
+            this.bounds.height
         );
 
-        this.viewport.addEventListener(
-            'pointerup',
-            this.pointerUpHandler
-        );
+        this.camera.zoom = DEFAULT_ZOOM;
 
-        this.viewport.addEventListener(
-            'pointercancel',
-            this.pointerCancelHandler
-        );
-
-        this.viewport.addEventListener(
-            'wheel',
-            this.wheelHandler,
-            { passive: false }
-        );
-
-        window.addEventListener(
-            'resize',
-            this.resizeHandler
-        );
-
-        this.nexusIntegration.bindFactionChanges(() => {
-            this.updateLocalization();
-            this.render();
-        });
+        return this.getState();
     }
 
-    updateViewport() {
-        if (!this.viewport) return;
-
-        const rect = this.viewport.getBoundingClientRect();
-
-        camera.setViewport(
-            Math.max(1, rect.width),
-            Math.max(1, rect.height)
-        );
-    }
-
-    clampCamera() {
-        const halfWidth =
-            camera.viewportWidth / (2 * camera.zoom);
-
-        const halfHeight =
-            camera.viewportHeight / (2 * camera.zoom);
-
-        camera.x =
-            WORLD_WIDTH <= halfWidth * 2
-                ? WORLD_WIDTH / 2
-                : Math.min(
-                    WORLD_WIDTH - halfWidth,
-                    Math.max(halfWidth, camera.x)
-                );
-
-        camera.y =
-            WORLD_HEIGHT <= halfHeight * 2
-                ? WORLD_HEIGHT / 2
-                : Math.min(
-                    WORLD_HEIGHT - halfHeight,
-                    Math.max(halfHeight, camera.y)
-                );
-    }
-
-    interactWithFarm() {
-        const now = Date.now();
-
-        if (now - this.lastTapTime < 120) return;
-        this.lastTapTime = now;
-
-        if (this.farmLevel === 0) {
-            if (economy.getBalance() < FARM_BASE_COST) {
-                economy.add(COIN_REWARD);
-                this.saveState();
-
-                if (!this.showLoreEvent('firstResource')) {
-                    this.showHint('🪙 +1');
-                }
-
-                this.render();
-                return;
-            }
-
-            if (!economy.spend(FARM_BASE_COST)) return;
-
-            this.farmLevel = 1;
-
-            objects.update('farm', {
-                data: { level: 1 }
-            });
-
-            this.saveState();
-
-            if (!this.showLoreEvent('farmOnline')) {
-                this.showHint(
-                    `${i18n.t(`nexus.buildings.${this.nexusIntegration.getCityBuildingKey('farm')}`)} ${i18n.t('hints.activated')}`
-                );
-            }
-
-            this.render();
-            return;
-        }
-
-        const reward =
-            FARM_LEVEL_REWARD * this.farmLevel;
-
-        economy.add(reward);
-        this.saveState();
-
-        this.showHint(`🪙 +${reward}`);
-        this.render();
-    }
-
-    interactWithBuilding(id) {
-        const building = BUILDINGS[id];
-        if (!building) return;
-
-        if (this.buildings[id]) {
-            this.showHint(
-                `${building.icon} ${i18n.t(
-                    `nexus.buildings.${this.nexusIntegration.getCityBuildingKey(id)}`
-                )}`
-            );
-            return;
-        }
-
-        if (!economy.canAfford(building.cost)) {
-            const feedback =
-                `${i18n.t('hints.insufficient')} ${building.cost} 🪙`;
-
-            if (!this.showLoreEvent('unknownStructure', feedback)) {
-                this.showHint(feedback);
-            }
-
-            return;
-        }
-
-        if (!economy.spend(building.cost)) return;
-
-        this.buildings[id] = true;
-
-        objects.update(id, {
-            data: { level: 1 }
-        });
-
-        this.saveState();
-
-        const feedback =
-            `${building.icon} ${i18n.t(
-                `nexus.buildings.${this.nexusIntegration.getCityBuildingKey(id)}`
-            )} ${i18n.t('hints.activated')}`;
-
-        if (!this.showLoreEvent('unknownStructure', feedback)) {
-            this.showHint(feedback);
-        }
-
-        if (id === 'workshop') {
-            this.startPassiveIncome();
-        }
-
-        this.render();
-    }
-
-    applyPassiveIncome() {
-        let totalIncome = 0;
-        for (const [side, city] of Object.entries(this.cityStates)) {
-            if (!city.buildings.workshop) continue;
-            const income = this.nexusIntegration.calculateBuildingIncome(
-                BUILDINGS.workshop.passiveIncome,
-                'workshop',
-                side
-            );
-            economy.add(income);
-            totalIncome += income;
-        }
-        return totalIncome;
-    }
-
-    applyOfflinePassiveIncome() {
-        const now = Date.now();
-        let hasOfflineIncome = false;
-
-        for (const [side, city] of Object.entries(this.cityStates)) {
-            if (!city.buildings.workshop || !city.lastSavedAt) continue;
-
-            const elapsed = Math.max(0, now - city.lastSavedAt);
-            const cycles = Math.floor(
-                elapsed / BUILDINGS.workshop.passiveInterval
-            );
-            if (cycles <= 0) continue;
-
-            const safeCycles = Math.min(cycles, 8640);
-            const income = this.nexusIntegration.calculateBuildingIncome(
-                safeCycles * BUILDINGS.workshop.passiveIncome,
-                'workshop',
-                side
-            );
-            economy.add(income);
-            hasOfflineIncome = true;
-        }
-
-        if (hasOfflineIncome) this.saveState();
-    }
-
-    startPassiveIncome() {
-        clearTimeout(this.passiveTimer);
-
-        const hasWorkshop = Object.values(this.cityStates || {}).some(
-            city => city.buildings.workshop
-        );
-        if (!hasWorkshop) {
-            this.passiveTimer = null;
-            return;
-        }
-
-        this.passiveTimer = setTimeout(() => {
-            if (
-                this.destroyed ||
-                !Object.values(this.cityStates || {}).some(
-                    city => city.buildings.workshop
-                )
-            ) {
-                return;
-            }
-
-            const income = this.applyPassiveIncome();
-            this.saveState();
-
-            if (income > 0) this.showHint(`🪙 +${income}`);
-            this.render();
-            this.startPassiveIncome();
-        }, BUILDINGS.workshop.passiveInterval);
-    }
-
-    updateLocalization() {
-        if (!this.languageButton) return;
-
-        this.languageButton.textContent =
-            i18n.code.toUpperCase();
-        this.nexusIntegration.updateLocalization(this, BUILDINGS);
-    }
-
-    updateBalance() {
-        if (!this.balanceElement) return;
-
-        this.balanceElement.textContent =
-            `🪙 ${economy.getBalance()}`;
-    }
-
-    showHint(message) {
-        if (!this.hintElement) return;
-
-        clearTimeout(this.hintTimer);
-
-        this.hintElement.classList.remove('is-lore');
-        this.hintElement.textContent = message;
-        this.hintElement.classList.add('is-visible');
-
-        this.hintTimer = setTimeout(() => {
-            if (this.hintElement) {
-                this.hintElement.classList.remove('is-visible');
-            }
-        }, 1800);
-    }
-
-    showLoreEvent(eventId, additionalText = '') {
-        const event = WORLD_LORE_EVENTS[eventId];
-
-        if (
-            !event ||
-            this.loreProgress.seenEvents.includes(eventId) ||
-            !this.hintElement
-        ) {
-            return false;
-        }
-
-        this.loreProgress.seenEvents.push(eventId);
-        storage.saveLoreProgress(this.loreProgress);
-
-        clearTimeout(this.hintTimer);
-
-        const message = [
-            i18n.t(event.titleKey),
-            i18n.t(event.textKey),
-            additionalText
-        ].filter(Boolean).join('\n\n');
-
-        this.hintElement.textContent = message;
-        this.hintElement.classList.add('is-lore', 'is-visible');
-
-        this.hintTimer = setTimeout(() => {
-            if (this.hintElement) {
-                this.hintElement.classList.remove('is-visible', 'is-lore');
-            }
-        }, event.duration);
-
-        return true;
-    }
-
-    applySphereProjection(element, worldX, worldY) {
-        if (!element) return;
-
-        const centerX = WORLD_WIDTH / 2;
-        const centerY = WORLD_HEIGHT / 2;
-
-        const dx = worldX - centerX;
-        const dy = worldY - centerY;
-
-        const distance =
-            Math.sqrt(dx * dx + dy * dy);
-
-        const normalized =
-            Math.min(1, distance / SPHERE_RADIUS);
-
-        const scale =
-            Math.max(
-                SPHERE_MIN_SCALE,
-                1 - normalized * 0.12
-            );
-
-        element.style.scale = String(scale);
-    }
-
-    render() {
-        if (
-            this.destroyed ||
-            !this.scene ||
-            !this.viewport
-        ) {
-            return;
-        }
-
-        this.updateBalance();
-        this.updateLocalization();
-        this.nexusIntegration.applyWorldMetadata(this.root);
-        this.clampCamera();
-
-        const width = camera.viewportWidth;
-        const height = camera.viewportHeight;
-
-        const offsetX =
-            width / 2 -
-            camera.x * camera.zoom;
-
-        const offsetY =
-            height / 2 -
-            camera.y * camera.zoom;
-
-        this.scene.style.width =
-            `${WORLD_WIDTH}px`;
-
-        this.scene.style.height =
-            `${WORLD_HEIGHT}px`;
-
-        this.scene.style.transform =
-            `translate3d(${offsetX}px, ${offsetY}px, 0) scale(${camera.zoom})`;
-
-        const farm =
-            this.scene.querySelector('.world-farm');
-
-        if (farm) {
-            farm.style.left = '7200px';
-            farm.style.top = '24600px';
-
-            const level =
-                farm.querySelector('.object-level');
-
-            if (level) {
-                level.textContent =
-                    `${i18n.t('buildings.farm.level')} ${this.farmLevel}`;
-            }
-
-            this.applySphereProjection(
-                farm,
-                7200,
-                24600
-            );
-        }
-
-        Object.values(BUILDINGS).forEach(building => {
-            const element =
-                this.scene.querySelector(
-                    `[data-object-id="${building.id}"]`
-                );
-
-            if (!element) return;
-
-            element.style.left = `${building.x}px`;
-            element.style.top = `${building.y}px`;
-
-            const purchased =
-                this.buildings[building.id];
-
-            const affordable =
-                economy.canAfford(building.cost);
-
-            element.classList.toggle(
-                'is-purchased',
-                purchased
-            );
-
-            element.classList.toggle(
-                'is-affordable',
-                !purchased && affordable
-            );
-
-            element.classList.toggle(
-                'is-locked',
-                !purchased
-            );
-
-            const price =
-                element.querySelector('.locked-price');
-
-            if (price) {
-                price.textContent =
-                    purchased
-                        ? i18n.t('hints.purchased')
-                        : `${building.cost} 🪙`;
-            }
-
-            const state =
-                element.querySelector('.locked-state');
-
-            if (state) {
-                state.textContent =
-                    purchased
-                        ? '✓'
-                        : affordable
-                            ? '🔓'
-                            : '🔒';
-            }
-
-            this.applySphereProjection(
-                element,
-                building.x,
-                building.y
-            );
-        });
-    }
-
-    destroy() {
-        this.destroyed = true;
-
-        clearTimeout(this.hintTimer);
-        clearTimeout(this.passiveTimer);
-
-        this.hintTimer = null;
-        this.passiveTimer = null;
-        this.nexusIntegration.destroy(this.root);
-
-        if (this.unsubscribeLanguage) {
-            this.unsubscribeLanguage();
-            this.unsubscribeLanguage = null;
-        }
-
-        if (this.viewport) {
-            if (this.pointerDownHandler) {
-                this.viewport.removeEventListener(
-                    'pointerdown',
-                    this.pointerDownHandler
-                );
-            }
-
-            if (this.pointerMoveHandler) {
-                this.viewport.removeEventListener(
-                    'pointermove',
-                    this.pointerMoveHandler
-                );
-            }
-
-            if (this.pointerUpHandler) {
-                this.viewport.removeEventListener(
-                    'pointerup',
-                    this.pointerUpHandler
-                );
-            }
-
-            if (this.pointerCancelHandler) {
-                this.viewport.removeEventListener(
-                    'pointercancel',
-                    this.pointerCancelHandler
-                );
-            }
-        }
-
-        if (this.resizeHandler) {
-            window.removeEventListener(
-                'resize',
-                this.resizeHandler
-            );
-        }
-
-        gestures.cancel();
-        this.activePointers.clear();
-        window.clearTimeout(this.suppressBuildingClickTimer);
-
-        if (this.viewport && this.wheelHandler) {
-            this.viewport.removeEventListener(
-                'wheel',
-                this.wheelHandler
-            );
-        }
-
-        this.root.innerHTML = '';
-
-        this.viewport = null;
-        this.scene = null;
-        this.hud = null;
+    #clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
     }
 }
 
+const world = new World();
+
 export {
     World,
-    WORLD_WIDTH,
-    WORLD_HEIGHT,
-    BUILDINGS,
-    WORLD_LORE_EVENTS
+    DEFAULT_WORLD,
+    MIN_ZOOM,
+    MAX_ZOOM,
+    DEFAULT_ZOOM
 };
 
-export default World;
+export default world;
