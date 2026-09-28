@@ -433,7 +433,7 @@ class World {
                 this.interactWithFarm();
             });
         } else {
-            element.className = 'world-object world-locked-upgrade';
+            element.className = 'world-object world-locked-upgrade world-main-' + id;
 
             element.innerHTML = `
                 <span class="locked-icon">${icon}</span>
