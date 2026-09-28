@@ -590,7 +590,7 @@ class World {
         if (!this.languageButton) return;
 
         this.languageButton.textContent =
-            i18n.getLanguage().toUpperCase();
+            i18n.code.toUpperCase();
 
         const farm =
             this.scene?.querySelector('.world-farm');
