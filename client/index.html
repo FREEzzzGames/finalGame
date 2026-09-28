@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#111318">
+    <meta name="description" content="FREEzzzGames — SYSTeM">
+    <title>FREEzzzGames</title>
+
+    <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
+
+    <link rel="stylesheet" href="./src/ui/styles/world.css">
+    <link rel="stylesheet" href="./src/ui/styles/chat.css">
+    <link rel="stylesheet" href="./src/ui/styles/chat-widget.css">
+
+    <style>
+        :root {
+            --system-bg: #111318;
+            --system-text: #ffffff;
+            --system-muted: #9ca3af;
+
+            --tg-viewport-height: 100dvh;
+            --tg-viewport-stable-height: 100dvh;
+
+            --tg-safe-top: 0px;
+            --tg-safe-right: 0px;
+            --tg-safe-bottom: 0px;
+            --tg-safe-left: 0px;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: var(--system-bg);
+        }
+
+        body {
+            width: 100%;
+            height: 100%;
+            min-width: 0;
+            min-height: 0;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: var(--system-bg);
+            color: var(--system-text);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        #app {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: var(--tg-viewport-height);
+            min-height: 1px;
+            max-height: none;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            isolation: isolate;
+        }
+
+        .app-root {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .safe-area {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            padding-top: var(--tg-safe-top);
+            padding-right: var(--tg-safe-right);
+            padding-bottom: var(--tg-safe-bottom);
+            padding-left: var(--tg-safe-left);
+        }
+
+        .boot-screen {
+            position: absolute;
+            inset: 0;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: var(--system-bg);
+            color: var(--system-text);
+            text-align: center;
+        }
+
+        .boot-content {
+            width: min(320px, 100%);
+        }
+
+        .boot-title {
+            margin: 0;
+            font-size: 28px;
+            line-height: 1.1;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .boot-status {
+            min-height: 20px;
+            margin: 10px 0 0;
+            color: var(--system-muted);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .boot-status.is-error {
+            color: #ff8a8a;
+        }
+
+        .app-error {
+            position: absolute;
+            left: 50%;
+            bottom: 24px;
+            width: min(420px, calc(100% - 32px));
+            transform: translateX(-50%);
+            padding: 10px 14px;
+            border: 1px solid rgba(255, 138, 138, 0.35);
+            border-radius: 12px;
+            background: rgba(80, 20, 24, 0.75);
+            color: #ffd5d5;
+            font-size: 12px;
+            line-height: 1.35;
+            text-align: left;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+    </style>
+</head>
+
+<body>
+    <main id="app">
+        <div class="app-root">
+            <section id="boot-screen" class="boot-screen" aria-label="FREEzzzGames">
+                <div class="boot-content">
+                    <h1 class="boot-title">FREEzzzGames</h1>
+                    <p id="boot-status" class="boot-status">Loading…</p>
+                </div>
+            </section>
+
+            <div class="safe-area" aria-hidden="true"></div>
+        </div>
+    </main>
+
+    <script type="module" src="./src/app/app.js?v=0.3.0"></script>
+</body>
+</html>
