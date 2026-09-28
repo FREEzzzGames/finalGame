@@ -8,10 +8,11 @@
  */
 
 import TelegramAdapter from '../telegram/telegram.js?v=0.3.0';
-import World from '../world/world.js?v=0.3.0';
+import World from '../world/world.js?v=0.4.0';
 import ChatWidget from '../chat/chat-widget.js?v=0.3.0';
+import LoreWidget from '../lore/lore-widget.js?v=0.4.0';
 
-const APP_VERSION = '0.3.0';
+const APP_VERSION = '0.4.0';
 
 const appRoot = document.querySelector('#app');
 const bootScreen = document.querySelector('#boot-screen');
@@ -19,6 +20,7 @@ const bootStatus = document.querySelector('#boot-status');
 
 let world = null;
 let chatWidget = null;
+let loreWidget = null;
 let playerSession = null;
 let unsubscribeTelegramViewport = null;
 let startupStage = 'Application startup';
@@ -207,6 +209,21 @@ function startChat() {
     return chatWidget;
 }
 
+function startLore() {
+    const mount = createMount('lore-widget-mount', 'lore-widget-mount');
+
+    if (loreWidget) {
+        loreWidget.destroy();
+    }
+
+    loreWidget = new LoreWidget();
+    if (!loreWidget.mountTo(mount)) {
+        throw new Error('[FREEzzzGames] Lore could not be mounted.');
+    }
+
+    return loreWidget;
+}
+
 function finishBoot() {
     setAppData('appVersion', APP_VERSION);
     setAppData('initialized', 'true');
@@ -269,6 +286,9 @@ async function startApp() {
     setBootStatus('Starting Geek Chat…');
     startChat();
 
+    startupStage = 'Lore startup';
+    startLore();
+
     startupStage = 'finish boot';
     finishBoot();
 
@@ -300,5 +320,6 @@ export {
     startApp,
     world,
     chatWidget,
+    loreWidget,
     playerSession
 };

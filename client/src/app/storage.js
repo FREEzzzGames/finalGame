@@ -19,8 +19,7 @@ const STORAGE_KEY =
 const LORE_PROGRESS_KEY =
     'freezzgames.world-lore.v1';
 
-const DEFAULT_STATE = {
-    balance: 0,
+const DEFAULT_CITY_STATE = {
     farmLevel: 0,
 
     buildings: {
@@ -30,6 +29,15 @@ const DEFAULT_STATE = {
         shopping: false
     },
 
+    lastSavedAt: 0
+};
+
+const DEFAULT_STATE = {
+    balance: 0,
+    cities: {
+        surface: { ...DEFAULT_CITY_STATE, buildings: { ...DEFAULT_CITY_STATE.buildings } },
+        undercity: { ...DEFAULT_CITY_STATE, buildings: { ...DEFAULT_CITY_STATE.buildings } }
+    },
     lastSavedAt: 0
 };
 
@@ -79,24 +87,44 @@ function normalizeBoolean(value, fallback) {
         : fallback;
 }
 
+function normalizeCityState(value, fallback = DEFAULT_CITY_STATE) {
+    const source = value && typeof value === 'object' ? value : {};
+    const sourceBuildings = source.buildings && typeof source.buildings === 'object'
+        ? source.buildings
+        : {};
+
+    return {
+        farmLevel: normalizeInteger(source.farmLevel, fallback.farmLevel),
+        buildings: {
+            workshop: normalizeBoolean(sourceBuildings.workshop, fallback.buildings.workshop),
+            stadium: normalizeBoolean(sourceBuildings.stadium, fallback.buildings.stadium),
+            studio: normalizeBoolean(sourceBuildings.studio, fallback.buildings.studio),
+            shopping: normalizeBoolean(sourceBuildings.shopping, fallback.buildings.shopping)
+        },
+        lastSavedAt: normalizeTimestamp(source.lastSavedAt)
+    };
+}
+
 function normalizeState(value) {
     if (
         !value ||
         typeof value !== 'object'
     ) {
-        return {
-            ...DEFAULT_STATE,
-            buildings: {
-                ...DEFAULT_STATE.buildings
-            }
-        };
+        return normalizeState({ balance: DEFAULT_STATE.balance });
     }
 
-    const sourceBuildings =
-        value.buildings &&
-        typeof value.buildings === 'object'
-            ? value.buildings
-            : {};
+    const legacySurface = {
+        farmLevel: value.farmLevel,
+        buildings: value.buildings,
+        lastSavedAt: value.lastSavedAt
+    };
+    const savedCities = value.cities && typeof value.cities === 'object'
+        ? value.cities
+        : {};
+    const surface = normalizeCityState(
+        savedCities.surface || legacySurface
+    );
+    const undercity = normalizeCityState(savedCities.undercity);
 
     return {
         balance: normalizeInteger(
@@ -104,32 +132,14 @@ function normalizeState(value) {
             DEFAULT_STATE.balance
         ),
 
-        farmLevel: normalizeInteger(
-            value.farmLevel,
-            DEFAULT_STATE.farmLevel
-        ),
-
-        buildings: {
-            workshop: normalizeBoolean(
-                sourceBuildings.workshop,
-                DEFAULT_STATE.buildings.workshop
-            ),
-
-            stadium: normalizeBoolean(
-                sourceBuildings.stadium,
-                DEFAULT_STATE.buildings.stadium
-            ),
-
-            studio: normalizeBoolean(
-                sourceBuildings.studio,
-                DEFAULT_STATE.buildings.studio
-            ),
-
-            shopping: normalizeBoolean(
-                sourceBuildings.shopping,
-                DEFAULT_STATE.buildings.shopping
-            )
+        cities: {
+            surface,
+            undercity
         },
+
+        // Legacy aliases keep old client modules and existing saves compatible.
+        farmLevel: surface.farmLevel,
+        buildings: { ...surface.buildings },
 
         lastSavedAt: normalizeTimestamp(
             value.lastSavedAt,
@@ -260,6 +270,8 @@ function saveState(state) {
             )
         );
 
+        window.dispatchEvent(new Event('systemprogresschange'));
+
         return true;
     } catch (error) {
         console.warn(
@@ -299,10 +311,12 @@ export {
     STORAGE_KEY,
     LORE_PROGRESS_KEY,
     DEFAULT_STATE,
+    DEFAULT_CITY_STATE,
     loadState,
     saveState,
     clearState,
     normalizeState,
+    normalizeCityState,
     normalizeLoreProgress,
     loadLoreProgress,
     saveLoreProgress

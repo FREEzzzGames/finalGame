@@ -17,6 +17,14 @@ import objects from './objects.js';
 import economy from '../economy/economy.js';
 import storage from '../app/storage.js';
 import i18n from '../i18n/i18n.js';
+import {
+    CITY_SIDE_DATA,
+    CITY_BUILDING_ICONS,
+    calculateFactionIncome,
+    loadNexusState,
+    saveNexusState,
+    setMissionStatus
+} from '../nexus/nexus.js';
 
 const WORLD_WIDTH = 2400;
 const WORLD_HEIGHT = 3600;
@@ -61,7 +69,7 @@ const SPHERE_MIN_SCALE = 0.50;
 const BUILDINGS = Object.freeze({
     workshop: {
         id: 'workshop',
-        icon: '🔧',
+        icon: '⚡',
         cost: 75,
         passiveIncome: 1,
         passiveInterval: 10000,
@@ -71,7 +79,7 @@ const BUILDINGS = Object.freeze({
 
     stadium: {
         id: 'stadium',
-        icon: '🏟️',
+        icon: '🚇',
         cost: 400,
         passiveIncome: 0,
         passiveInterval: 0,
@@ -81,7 +89,7 @@ const BUILDINGS = Object.freeze({
 
     studio: {
         id: 'studio',
-        icon: '🎬',
+        icon: '🌐',
         cost: 2000,
         passiveIncome: 0,
         passiveInterval: 0,
@@ -91,7 +99,7 @@ const BUILDINGS = Object.freeze({
 
     shopping: {
         id: 'shopping',
-        icon: '🏢',
+        icon: '🏦',
         cost: 10000,
         passiveIncome: 0,
         passiveInterval: 0,
@@ -119,9 +127,11 @@ class World {
         this.balanceElement = null;
         this.hintElement = null;
         this.languageButton = null;
+        this.worldSwitchButton = null;
 
         this.unsubscribeLanguage = null;
         this.resizeHandler = null;
+        this.factionChangeHandler = null;
         this.pointerDownHandler = null;
         this.pointerMoveHandler = null;
         this.pointerUpHandler = null;
@@ -137,12 +147,16 @@ class World {
             studio: false,
             shopping: false
         };
+        this.cityStates = null;
 
         this.lastSavedAt = 0;
         this.loreProgress = storage.loadLoreProgress();
         this.lastTapTime = 0;
         this.hintTimer = null;
         this.passiveTimer = null;
+        this.worldFlipTimer = null;
+        this.nexusState = loadNexusState();
+        this.activeDistrict = CITY_SIDE_DATA[this.nexusState.side].district;
         this.destroyed = false;
 
         this.init();
@@ -150,6 +164,12 @@ class World {
 
     init() {
         this.loadSavedState();
+        if (!this.cityStates.surface.buildings.stadium && this.nexusState.side !== 'surface') {
+            this.nexusState.side = 'surface';
+            saveNexusState(this.nexusState);
+        }
+        this.loadCityState(this.nexusState.side);
+        this.activeDistrict = CITY_SIDE_DATA[this.nexusState.side].district;
         this.createStructure();
         this.createObjects();
         this.bindEvents();
@@ -176,27 +196,57 @@ class World {
         const state = storage.loadState();
 
         economy.setBalance(state.balance);
-        this.farmLevel = state.farmLevel;
-
-        this.buildings = {
-            workshop: state.buildings.workshop,
-            stadium: state.buildings.stadium,
-            studio: state.buildings.studio,
-            shopping: state.buildings.shopping
+        this.cityStates = {
+            surface: {
+                ...state.cities.surface,
+                buildings: { ...state.cities.surface.buildings }
+            },
+            undercity: {
+                ...state.cities.undercity,
+                buildings: { ...state.cities.undercity.buildings }
+            }
         };
 
-        this.lastSavedAt = state.lastSavedAt;
+        this.loadCityState(this.nexusState.side);
+    }
+
+    loadCityState(side) {
+        const city = this.cityStates?.[side] || this.cityStates?.surface;
+        if (!city) return;
+
+        this.farmLevel = city.farmLevel;
+        this.buildings = { ...city.buildings };
+        this.lastSavedAt = city.lastSavedAt;
+
+        if (this.scene) {
+            objects.update('farm', { data: { level: this.farmLevel } });
+            for (const id of Object.keys(BUILDINGS)) {
+                objects.update(id, {
+                    data: { level: this.buildings[id] ? 1 : 0 }
+                });
+            }
+        }
     }
 
     saveState() {
-        storage.saveState({
-            balance: economy.getBalance(),
+        const now = Date.now();
+        this.cityStates[this.nexusState.side] = {
             farmLevel: this.farmLevel,
             buildings: { ...this.buildings },
-            lastSavedAt: Date.now()
+            lastSavedAt: now
+        };
+
+        for (const city of Object.values(this.cityStates)) {
+            city.lastSavedAt = now;
+        }
+
+        storage.saveState({
+            balance: economy.getBalance(),
+            cities: this.cityStates,
+            lastSavedAt: now
         });
 
-        this.lastSavedAt = Date.now();
+        this.lastSavedAt = now;
     }
 
     createStructure() {
@@ -215,6 +265,14 @@ class World {
         this.balanceElement = document.createElement('div');
         this.balanceElement.className = 'world-balance';
 
+        this.worldSwitchButton = document.createElement('button');
+        this.worldSwitchButton.type = 'button';
+        this.worldSwitchButton.className = 'world-switch-button';
+        this.worldSwitchButton.addEventListener('click', event => {
+            event.stopPropagation();
+            this.flipWorld();
+        });
+
         this.hintElement = document.createElement('div');
         this.hintElement.className = 'world-hint';
 
@@ -230,6 +288,7 @@ class World {
         this.hud.append(
             this.languageButton,
             this.balanceElement,
+            this.worldSwitchButton,
             this.hintElement
         );
 
@@ -248,7 +307,7 @@ class World {
         this.scene.innerHTML = '';
         objects.clear();
 
-        this.createBuildingElement('farm', '🌾', 150, 130);
+        this.createBuildingElement('farm', '🏙️', 150, 130);
 
         objects.add({
             id: 'farm',
@@ -410,6 +469,11 @@ class World {
             this.render();
         };
 
+        this.factionChangeHandler = () => {
+            this.updateLocalization();
+            this.render();
+        };
+
         this.viewport.addEventListener(
             'pointerdown',
             this.pointerDownHandler
@@ -433,6 +497,11 @@ class World {
         window.addEventListener(
             'resize',
             this.resizeHandler
+        );
+
+        window.addEventListener(
+            'nexusfactionchange',
+            this.factionChangeHandler
         );
     }
 
@@ -502,7 +571,7 @@ class World {
 
             if (!this.showLoreEvent('farmOnline')) {
                 this.showHint(
-                    i18n.t('buildings.farm.built')
+                    `${i18n.t(`nexus.buildings.${this.getCityBuildingKey('farm')}`)} ${i18n.t('hints.activated')}`
                 );
             }
 
@@ -527,7 +596,7 @@ class World {
         if (this.buildings[id]) {
             this.showHint(
                 `${building.icon} ${i18n.t(
-                    `buildings.${id}.title`
+                    `nexus.buildings.${this.getCityBuildingKey(id)}`
                 )}`
             );
             return;
@@ -556,8 +625,8 @@ class World {
 
         const feedback =
             `${building.icon} ${i18n.t(
-                `buildings.${id}.built`
-            )}`;
+                `nexus.buildings.${this.getCityBuildingKey(id)}`
+            )} ${i18n.t('hints.activated')}`;
 
         if (!this.showLoreEvent('unknownStructure', feedback)) {
             this.showHint(feedback);
@@ -571,46 +640,66 @@ class World {
     }
 
     applyPassiveIncome() {
-        if (!this.buildings.workshop) return;
-
-        economy.add(
-            BUILDINGS.workshop.passiveIncome
-        );
+        let totalIncome = 0;
+        for (const [side, city] of Object.entries(this.cityStates)) {
+            if (!city.buildings.workshop) continue;
+            totalIncome += this.addFactionBuildingIncome(
+                BUILDINGS.workshop.passiveIncome,
+                'workshop',
+                side
+            );
+        }
+        return totalIncome;
     }
 
     applyOfflinePassiveIncome() {
-        if (
-            !this.buildings.workshop ||
-            !this.lastSavedAt
-        ) {
-            return;
-        }
+        const now = Date.now();
+        let hasOfflineIncome = false;
 
-        const elapsed =
-            Math.max(0, Date.now() - this.lastSavedAt);
+        for (const [side, city] of Object.entries(this.cityStates)) {
+            if (!city.buildings.workshop || !city.lastSavedAt) continue;
 
-        const cycles =
-            Math.floor(
+            const elapsed = Math.max(0, now - city.lastSavedAt);
+            const cycles = Math.floor(
                 elapsed / BUILDINGS.workshop.passiveInterval
             );
+            if (cycles <= 0) continue;
 
-        if (cycles <= 0) return;
+            const safeCycles = Math.min(cycles, 8640);
+            this.addFactionBuildingIncome(
+                safeCycles * BUILDINGS.workshop.passiveIncome,
+                'workshop',
+                side
+            );
+            hasOfflineIncome = true;
+        }
 
-        const safeCycles =
-            Math.min(cycles, 8640);
+        if (hasOfflineIncome) this.saveState();
+    }
 
-        economy.add(
-            safeCycles *
-            BUILDINGS.workshop.passiveIncome
+    addFactionBuildingIncome(amount, buildingId, side = this.nexusState.side) {
+        const state = loadNexusState();
+        const key = `${side}:${buildingId}`;
+        const result = calculateFactionIncome(
+            amount,
+            state.faction,
+            state.faction,
+            state.incomeRemainders[key]
         );
 
-        this.saveState();
+        state.incomeRemainders[key] = result.remainder;
+        saveNexusState(state);
+        economy.add(result.income);
+        return result.income;
     }
 
     startPassiveIncome() {
         clearTimeout(this.passiveTimer);
 
-        if (!this.buildings.workshop) {
+        const hasWorkshop = Object.values(this.cityStates || {}).some(
+            city => city.buildings.workshop
+        );
+        if (!hasWorkshop) {
             this.passiveTimer = null;
             return;
         }
@@ -618,15 +707,17 @@ class World {
         this.passiveTimer = setTimeout(() => {
             if (
                 this.destroyed ||
-                !this.buildings.workshop
+                !Object.values(this.cityStates || {}).some(
+                    city => city.buildings.workshop
+                )
             ) {
                 return;
             }
 
-            this.applyPassiveIncome();
+            const income = this.applyPassiveIncome();
             this.saveState();
 
-            this.showHint('🪙 +1');
+            if (income > 0) this.showHint(`🪙 +${income}`);
             this.render();
             this.startPassiveIncome();
         }, BUILDINGS.workshop.passiveInterval);
@@ -635,19 +726,49 @@ class World {
     updateLocalization() {
         if (!this.languageButton) return;
 
+        this.nexusState = loadNexusState();
+        this.activeDistrict = CITY_SIDE_DATA[this.nexusState.side].district;
+
         this.languageButton.textContent =
             i18n.code.toUpperCase();
+
+        const targetSide = this.nexusState.side === 'surface'
+            ? 'undercity'
+            : 'surface';
+        const undercityUnlocked = this.isUndercityUnlocked();
+        this.worldSwitchButton.textContent =
+            `${undercityUnlocked ? '↻' : '🔒'} ${i18n.t(`nexus.${targetSide}`)}`;
+        this.worldSwitchButton.setAttribute(
+            'aria-label',
+            i18n.t(`nexus.switchTo.${targetSide}`)
+        );
+        this.worldSwitchButton.disabled = Boolean(this.worldFlipTimer);
+        this.worldSwitchButton.setAttribute(
+            'aria-disabled',
+            String(!undercityUnlocked || Boolean(this.worldFlipTimer))
+        );
+        this.worldSwitchButton.title = undercityUnlocked
+            ? i18n.t(`nexus.switchTo.${targetSide}`)
+            : i18n.t('nexus.undercityLocked');
 
         const farm =
             this.scene?.querySelector('.world-farm');
 
         if (farm) {
+            const icon = farm.querySelector('.object-icon');
+            if (icon) {
+                icon.textContent = CITY_BUILDING_ICONS[
+                    this.getCityBuildingKey('farm')
+                ];
+            }
+
             const title =
                 farm.querySelector('.object-title');
 
             if (title) {
-                title.textContent =
-                    i18n.t('buildings.farm.title');
+                title.textContent = i18n.t(
+                    `nexus.buildings.${this.getCityBuildingKey('farm')}`
+                );
             }
         }
 
@@ -663,12 +784,83 @@ class World {
                 element.querySelector('.locked-title');
 
             if (title) {
-                title.textContent =
-                    i18n.t(
-                        `buildings.${building.id}.title`
-                    );
+                title.textContent = i18n.t(
+                    `nexus.buildings.${this.getCityBuildingKey(building.id)}`
+                );
+            }
+
+            const icon = element.querySelector('.locked-icon');
+            if (icon) {
+                icon.textContent = CITY_BUILDING_ICONS[
+                    this.getCityBuildingKey(building.id)
+                ] || building.icon;
             }
         });
+    }
+
+    getCityBuildingKey(id) {
+        this.nexusState = loadNexusState();
+        this.activeDistrict = CITY_SIDE_DATA[this.nexusState.side].district;
+
+        if (id === 'farm') {
+            return this.nexusState.side === 'surface'
+                ? 'nexus-core'
+                : 'undercity-core';
+        }
+
+        const faction = this.nexusState.faction || 'government';
+        const factionBuildings =
+            this.activeDistrict.buildingsByFaction[faction];
+        const buildingIndex = Object.keys(BUILDINGS).indexOf(id);
+        return factionBuildings[buildingIndex] || id;
+    }
+
+    isUndercityUnlocked() {
+        return Boolean(
+            this.cityStates?.surface?.buildings.stadium ||
+            this.nexusState.visitedUndercity
+        );
+    }
+
+    flipWorld() {
+        if (!this.isUndercityUnlocked() || this.worldFlipTimer) {
+            if (!this.isUndercityUnlocked()) {
+                this.showHint(i18n.t('nexus.undercityLocked'));
+            }
+            return false;
+        }
+
+        this.root.classList.add('is-flipping');
+        this.worldSwitchButton.disabled = true;
+
+        this.worldFlipTimer = setTimeout(() => {
+            this.nexusState = loadNexusState();
+            this.nexusState.side =
+                this.nexusState.side === 'surface' ? 'undercity' : 'surface';
+            if (this.nexusState.side === 'undercity') {
+                this.nexusState.visitedUndercity = true;
+                if (this.nexusState.faction === 'mafia') {
+                    this.nexusState = setMissionStatus(
+                        this.nexusState,
+                        'trace-grid-signal',
+                        'available'
+                    );
+                }
+            }
+            saveNexusState(this.nexusState);
+            this.activeDistrict = CITY_SIDE_DATA[this.nexusState.side].district;
+            this.loadCityState(this.nexusState.side);
+            this.updateLocalization();
+            this.render();
+
+            this.worldFlipTimer = setTimeout(() => {
+                this.root.classList.remove('is-flipping');
+                this.worldFlipTimer = null;
+                this.updateLocalization();
+            }, 340);
+        }, 320);
+
+        return true;
     }
 
     updateBalance() {
@@ -763,6 +955,11 @@ class World {
 
         this.updateBalance();
         this.updateLocalization();
+        this.root.dataset.citySide = this.nexusState.side;
+        this.root.dataset.districtId = this.activeDistrict.id;
+        this.root.dataset.developmentSlots = String(
+            this.activeDistrict.developmentSlots
+        );
         this.clampCamera();
 
         const width = camera.viewportWidth;
@@ -875,9 +1072,11 @@ class World {
 
         clearTimeout(this.hintTimer);
         clearTimeout(this.passiveTimer);
+        clearTimeout(this.worldFlipTimer);
 
         this.hintTimer = null;
         this.passiveTimer = null;
+        this.worldFlipTimer = null;
 
         if (this.unsubscribeLanguage) {
             this.unsubscribeLanguage();
@@ -918,6 +1117,13 @@ class World {
             window.removeEventListener(
                 'resize',
                 this.resizeHandler
+            );
+        }
+
+        if (this.factionChangeHandler) {
+            window.removeEventListener(
+                'nexusfactionchange',
+                this.factionChangeHandler
             );
         }
 

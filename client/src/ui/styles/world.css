@@ -27,14 +27,9 @@
     overflow: hidden;
 
     background:
-        linear-gradient(
-            180deg,
-            #8fd3ff 0%,
-            #bfe8ff 48%,
-            #d9f3c7 100%
-        );
+        radial-gradient(ellipse at 50% 45%, #202b4d 0%, #111725 58%, #080b12 100%);
 
-    color: #18251c;
+    color: #edf4ff;
 
     font-family:
         system-ui,
@@ -47,6 +42,40 @@
     -webkit-user-select: none;
 
     touch-action: none;
+}
+
+.game-world[data-city-side="undercity"] {
+    background:
+        radial-gradient(ellipse at 50% 46%, #292047 0%, #111827 54%, #080b13 100%);
+    color: #e6e6f4;
+}
+
+.game-world[data-city-side="surface"] {
+    background:
+        radial-gradient(ellipse at 50% 45%, #202b4d 0%, #111725 58%, #080b12 100%);
+}
+
+.game-world[data-city-side="undercity"] .world-viewport::after {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    background:
+        linear-gradient(180deg, rgba(23, 18, 50, .12), rgba(4, 8, 22, .3));
+    content: "";
+    pointer-events: none;
+}
+
+.game-world.is-flipping {
+    transform-origin: center center;
+    animation: world-coin-flip 660ms ease-in-out both;
+    box-shadow: 0 0 44px rgba(118, 119, 255, .55);
+}
+
+@keyframes world-coin-flip {
+    0% { transform: perspective(1000px) rotateY(0deg) scaleX(1); }
+    48% { transform: perspective(1000px) rotateY(82deg) scaleX(.08); }
+    52% { transform: perspective(1000px) rotateY(98deg) scaleX(.08); }
+    100% { transform: perspective(1000px) rotateY(0deg) scaleX(1); }
 }
 
 .world-viewport {
@@ -75,11 +104,9 @@
     will-change: transform;
 
     background:
-        linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.12),
-            rgba(255, 255, 255, 0)
-        );
+        linear-gradient(180deg, rgba(77, 139, 255, .08), rgba(10, 15, 30, .18)),
+        repeating-linear-gradient(0deg, transparent 0 139px, rgba(93, 132, 210, .08) 140px 141px),
+        repeating-linear-gradient(90deg, transparent 0 139px, rgba(93, 132, 210, .08) 140px 141px);
 }
 
 .world-hud {
@@ -174,6 +201,28 @@
         transform 120ms ease,
         filter 120ms ease,
         background 120ms ease;
+}
+
+.world-switch-button {
+    position: absolute;
+    top: calc(max(12px, env(safe-area-inset-top)) + 40px);
+    left: 12px;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 12px;
+    background: rgba(17, 19, 24, .88);
+    box-shadow: 0 5px 16px rgba(0, 0, 0, .22);
+    color: #fff;
+    font: 700 10px/1 system-ui, sans-serif;
+    letter-spacing: .06em;
+    pointer-events: auto;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.world-switch-button:disabled {
+    opacity: .55;
 }
 
 .world-language-button:hover {
@@ -298,14 +347,16 @@
     background:
         linear-gradient(
             180deg,
-            #fff8d7,
-            #f3d987
+            rgba(38, 58, 94, .98),
+            rgba(15, 24, 44, .98)
         );
 
     box-shadow:
-        0 10px 28px rgba(70, 74, 40, 0.2);
+        0 0 0 1px rgba(98, 171, 255, .45),
+        0 0 30px rgba(73, 143, 255, .25),
+        0 10px 28px rgba(0, 0, 0, .3);
 
-    color: #3b351d;
+    color: #e9f6ff;
 }
 
 .world-farm:hover {
@@ -355,16 +406,16 @@
     border-radius: 20px;
 
     background:
-        rgba(255, 255, 255, 0.34);
+        rgba(16, 24, 42, .65);
 
     border:
-        1px solid rgba(255, 255, 255, 0.42);
+        1px solid rgba(120, 153, 204, .3);
 
     box-shadow:
-        0 8px 22px rgba(70, 74, 80, 0.08);
+        0 0 18px rgba(54, 94, 164, .12);
 
     color:
-        rgba(40, 48, 45, 0.62);
+        rgba(208, 221, 243, .65);
 
     opacity: 0.48;
 
@@ -376,16 +427,16 @@
 
 .world-locked-upgrade.is-affordable {
     background:
-        rgba(255, 255, 255, 0.82);
+        rgba(30, 47, 76, .94);
 
     border:
-        1px solid rgba(255, 255, 255, 0.72);
+        1px solid rgba(101, 190, 255, .62);
 
     box-shadow:
-        0 10px 26px rgba(70, 74, 80, 0.16);
+        0 0 24px rgba(62, 162, 255, .2);
 
     color:
-        #25342b;
+        #f0f7ff;
 
     opacity: 0.92;
 
@@ -403,16 +454,16 @@
 
 .world-locked-upgrade.is-purchased {
     background:
-        rgba(255, 255, 255, 0.94);
+        rgba(22, 39, 61, .96);
 
     border:
-        1px solid rgba(255, 255, 255, 0.9);
+        1px solid rgba(97, 224, 212, .62);
 
     box-shadow:
-        0 12px 30px rgba(70, 74, 80, 0.2);
+        0 0 26px rgba(41, 220, 210, .18);
 
     color:
-        #24352b;
+        #eaffff;
 
     opacity: 1;
 
@@ -500,6 +551,11 @@
         font-size: 13px;
     }
 
+    .world-switch-button {
+        top: calc(max(10px, env(safe-area-inset-top)) + 38px);
+        left: 10px;
+    }
+
     .world-farm {
         width: 140px;
         min-height: 120px;
@@ -534,5 +590,9 @@
     .world-hint,
     .world-language-button {
         transition: none;
+    }
+
+    .game-world.is-flipping {
+        animation: none;
     }
 }
