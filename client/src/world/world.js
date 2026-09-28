@@ -69,8 +69,8 @@ const WORLD_LORE_EVENTS = Object.freeze({
     })
 });
 
-const SPHERE_RADIUS_MULTIPLIER = 1.5;
-const SPHERE_MIN_SCALE = 0.50;
+const SPHERE_RADIUS_MULTIPLIER = 7.5;
+const SPHERE_MIN_SCALE = 0.88;
 
 const BUILDINGS = Object.freeze({
     workshop: { id: 'workshop', icon: '⚡', cost: 75, passiveIncome: 1, passiveInterval: 10000, x: 19200, y: 7200 },
@@ -1010,7 +1010,7 @@ class World {
         const scale =
             Math.max(
                 SPHERE_MIN_SCALE,
-                1 - normalized * 0.5
+                1 - normalized * 0.12
             );
 
         element.style.scale = String(scale);
@@ -1067,8 +1067,8 @@ class World {
 
             this.applySphereProjection(
                 farm,
-                WORLD_WIDTH / 2,
-                WORLD_HEIGHT / 2
+                7200,
+                24600
             );
         }
 
