@@ -202,7 +202,7 @@ function canvas(){return document.getElementById('worldCanvas')}
 function districtZoom(){
 var s=stage();if(!s)return .06;
 var span=5200;
-return Math.max(.035,Math.min(.16,Math.min(s.clientWidth/span,s.clientHeight/span)*.92));
+return Math.max(.035,Math.min(.16,Math.min(s.clientWidth/span,s.clientHeight/span)*.975));
 }
 function applyCam(){
 var w=canvas();if(!w)return;
