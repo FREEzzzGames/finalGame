@@ -131,6 +131,13 @@ class World {
 
         this.pointerActive = false;
         this.lastPointer = null;
+        this.activePointers = new Map();
+        this.pinchStartDistance = 0;
+        this.pinchStartZoom = 1;
+        this.dragMoved = false;
+        this.suppressBuildingClick = false;
+        this.zoomMin = 0.72;
+        this.zoomMax = 1.65;
 
         this.farmLevel = 0;
         this.buildings = {
@@ -161,6 +168,18 @@ class World {
         this.bindEvents();
 
         this.updateViewport();
+
+        camera.setZoom(
+            Math.min(
+                this.zoomMax,
+                Math.max(
+                    this.zoomMin,
+                    this.viewport?.getBoundingClientRect().width <= 520
+                        ? 1.12
+                        : 1.06
+                )
+            )
+        );
 
         camera.setPosition(
             WORLD_WIDTH / 2,
@@ -259,6 +278,50 @@ class World {
         this.hintElement = document.createElement('div');
         this.hintElement.className = 'world-hint';
 
+        this.zoomControls = document.createElement('div');
+        this.zoomControls.className = 'world-zoom-controls';
+
+        this.zoomOutButton = document.createElement('button');
+        this.zoomOutButton.type = 'button';
+        this.zoomOutButton.className = 'world-zoom-button';
+        this.zoomOutButton.textContent = '−';
+        this.zoomOutButton.setAttribute('aria-label', 'Zoom out');
+
+        this.zoomInButton = document.createElement('button');
+        this.zoomInButton.type = 'button';
+        this.zoomInButton.className = 'world-zoom-button';
+        this.zoomInButton.textContent = '+';
+        this.zoomInButton.setAttribute('aria-label', 'Zoom in');
+
+        this.zoomControls.append(
+            this.zoomOutButton,
+            this.zoomInButton
+        );
+
+        const changeZoom = delta => {
+            const nextZoom = Math.min(
+                this.zoomMax,
+                Math.max(
+                    this.zoomMin,
+                    camera.zoom + delta
+                )
+            );
+
+            camera.setZoom(nextZoom);
+            this.clampCamera();
+            this.render();
+        };
+
+        this.zoomOutButton.addEventListener('click', event => {
+            event.stopPropagation();
+            changeZoom(-0.12);
+        });
+
+        this.zoomInButton.addEventListener('click', event => {
+            event.stopPropagation();
+            changeZoom(0.12);
+        });
+
         this.languageButton = document.createElement('button');
         this.languageButton.type = 'button';
         this.languageButton.className = 'world-language-button';
@@ -272,7 +335,8 @@ class World {
             this.languageButton,
             this.balanceElement,
             this.worldSwitchButton,
-            this.hintElement
+            this.hintElement,
+            this.zoomControls
         );
 
         this.unsubscribeLanguage = i18n.subscribe(() => {
@@ -340,6 +404,11 @@ class World {
 
             element.addEventListener('click', event => {
                 event.stopPropagation();
+
+                if (this.suppressBuildingClick) {
+                    return;
+                }
+
                 this.interactWithFarm();
             });
         } else {
@@ -354,6 +423,11 @@ class World {
 
             element.addEventListener('click', event => {
                 event.stopPropagation();
+
+                if (this.suppressBuildingClick) {
+                    return;
+                }
+
                 this.interactWithBuilding(id);
             });
         }
@@ -373,15 +447,33 @@ class World {
                 return;
             }
 
-            this.pointerActive = true;
-            this.lastPointer = {
+            this.activePointers.set(event.pointerId, {
                 x: event.clientX,
                 y: event.clientY
-            };
+            });
+
+            this.pointerActive = true;
+            this.dragMoved = false;
 
             try {
                 this.viewport.setPointerCapture(event.pointerId);
             } catch {}
+
+            if (this.activePointers.size >= 2) {
+                const points = [...this.activePointers.values()];
+                const dx = points[1].x - points[0].x;
+                const dy = points[1].y - points[0].y;
+
+                this.pinchStartDistance = Math.hypot(dx, dy);
+                this.pinchStartZoom = camera.zoom;
+                gestures.cancel();
+                return;
+            }
+
+            this.lastPointer = {
+                x: event.clientX,
+                y: event.clientY
+            };
 
             gestures.start(
                 event.clientX,
@@ -393,6 +485,42 @@ class World {
         this.pointerMoveHandler = event => {
             if (!this.pointerActive) return;
 
+            if (this.activePointers.has(event.pointerId)) {
+                this.activePointers.set(event.pointerId, {
+                    x: event.clientX,
+                    y: event.clientY
+                });
+            }
+
+            if (this.activePointers.size >= 2) {
+                const points = [...this.activePointers.values()];
+                const dx = points[1].x - points[0].x;
+                const dy = points[1].y - points[0].y;
+                const distance = Math.max(1, Math.hypot(dx, dy));
+
+                if (this.pinchStartDistance <= 0) {
+                    this.pinchStartDistance = distance;
+                    this.pinchStartZoom = camera.zoom;
+                }
+
+                const nextZoom =
+                    this.pinchStartZoom *
+                    (distance / this.pinchStartDistance);
+
+                camera.setZoom(
+                    Math.min(
+                        this.zoomMax,
+                        Math.max(this.zoomMin, nextZoom)
+                    )
+                );
+
+                this.dragMoved = true;
+                this.suppressBuildingClick = true;
+                this.clampCamera();
+                this.render();
+                return;
+            }
+
             const result = gestures.move(
                 event.clientX,
                 event.clientY,
@@ -400,6 +528,21 @@ class World {
             );
 
             if (!result || result.type !== 'move') return;
+
+            if (
+                Math.hypot(
+                    result.totalDeltaX,
+                    result.totalDeltaY
+                ) >= 10
+            ) {
+                this.dragMoved = true;
+                this.suppressBuildingClick = true;
+
+                window.clearTimeout(this.suppressBuildingClickTimer);
+                this.suppressBuildingClickTimer = window.setTimeout(() => {
+                    this.suppressBuildingClick = false;
+                }, 180);
+            }
 
             camera.move(
                 -result.deltaX / Math.max(camera.zoom, 0.0001),
@@ -416,6 +559,21 @@ class World {
         };
 
         this.pointerUpHandler = event => {
+            this.activePointers.delete(event.pointerId);
+
+            if (this.activePointers.size < 2) {
+                this.pinchStartDistance = 0;
+                this.pinchStartZoom = camera.zoom;
+            }
+
+            try {
+                this.viewport.releasePointerCapture(event.pointerId);
+            } catch {}
+
+            if (this.activePointers.size > 0) {
+                return;
+            }
+
             if (!this.pointerActive) return;
 
             this.pointerActive = false;
@@ -426,22 +584,57 @@ class World {
                 event.timeStamp
             );
 
-            if (result?.type === 'swipe') {
+            if (result?.type === 'swipe' || this.dragMoved) {
                 this.clampCamera();
                 this.render();
             }
 
-            try {
-                this.viewport.releasePointerCapture(event.pointerId);
-            } catch {}
-
             this.lastPointer = null;
+
+            if (this.dragMoved) {
+                window.clearTimeout(this.suppressBuildingClickTimer);
+                this.suppressBuildingClickTimer = window.setTimeout(() => {
+                    this.suppressBuildingClick = false;
+                }, 180);
+            }
         };
 
-        this.pointerCancelHandler = () => {
-            this.pointerActive = false;
-            this.lastPointer = null;
-            gestures.cancel();
+        this.pointerCancelHandler = event => {
+            if (event?.pointerId != null) {
+                this.activePointers.delete(event.pointerId);
+            }
+
+            if (this.activePointers.size === 0) {
+                this.pointerActive = false;
+                this.lastPointer = null;
+                this.dragMoved = false;
+                this.pinchStartDistance = 0;
+                gestures.cancel();
+            }
+        };
+
+        this.wheelHandler = event => {
+            if (this.destroyed) return;
+
+            event.preventDefault();
+
+            const delta =
+                event.deltaY > 0
+                    ? -0.08
+                    : 0.08;
+
+            camera.setZoom(
+                Math.min(
+                    this.zoomMax,
+                    Math.max(
+                        this.zoomMin,
+                        camera.zoom + delta
+                    )
+                )
+            );
+
+            this.clampCamera();
+            this.render();
         };
 
         this.resizeHandler = () => {
@@ -470,6 +663,12 @@ class World {
         this.viewport.addEventListener(
             'pointercancel',
             this.pointerCancelHandler
+        );
+
+        this.viewport.addEventListener(
+            'wheel',
+            this.wheelHandler,
+            { passive: false }
         );
 
         window.addEventListener(
@@ -949,6 +1148,15 @@ class World {
         }
 
         gestures.cancel();
+        this.activePointers.clear();
+        window.clearTimeout(this.suppressBuildingClickTimer);
+
+        if (this.viewport && this.wheelHandler) {
+            this.viewport.removeEventListener(
+                'wheel',
+                this.wheelHandler
+            );
+        }
 
         this.root.innerHTML = '';
 
