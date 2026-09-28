@@ -16,6 +16,9 @@
 const STORAGE_KEY =
     'freezzgames.game-state.v1';
 
+const LORE_PROGRESS_KEY =
+    'freezzgames.world-lore.v1';
+
 const DEFAULT_STATE = {
     balance: 0,
     farmLevel: 0,
@@ -134,6 +137,67 @@ function normalizeState(value) {
     };
 }
 
+function normalizeLoreProgress(value) {
+    const seenEvents =
+        value &&
+        typeof value === 'object' &&
+        Array.isArray(value.seenEvents)
+            ? value.seenEvents.filter(
+                eventId =>
+                    typeof eventId === 'string' &&
+                    eventId.trim()
+            )
+            : [];
+
+    return {
+        seenEvents: [...new Set(seenEvents)]
+    };
+}
+
+function loadLoreProgress() {
+    const storage = getStorage();
+
+    if (!storage) {
+        return normalizeLoreProgress(null);
+    }
+
+    try {
+        const raw = storage.getItem(LORE_PROGRESS_KEY);
+        return normalizeLoreProgress(raw ? JSON.parse(raw) : null);
+    } catch (error) {
+        console.warn(
+            '[FREEzzzGames] World lore progress could not be loaded:',
+            error
+        );
+
+        return normalizeLoreProgress(null);
+    }
+}
+
+function saveLoreProgress(progress) {
+    const storage = getStorage();
+
+    if (!storage) {
+        return false;
+    }
+
+    try {
+        storage.setItem(
+            LORE_PROGRESS_KEY,
+            JSON.stringify(normalizeLoreProgress(progress))
+        );
+
+        return true;
+    } catch (error) {
+        console.warn(
+            '[FREEzzzGames] World lore progress could not be saved:',
+            error
+        );
+
+        return false;
+    }
+}
+
 function loadState() {
     const storage =
         getStorage();
@@ -233,18 +297,26 @@ function clearState() {
 
 export {
     STORAGE_KEY,
+    LORE_PROGRESS_KEY,
     DEFAULT_STATE,
     loadState,
     saveState,
     clearState,
-    normalizeState
+    normalizeState,
+    normalizeLoreProgress,
+    loadLoreProgress,
+    saveLoreProgress
 };
 
 export default {
     STORAGE_KEY,
+    LORE_PROGRESS_KEY,
     DEFAULT_STATE,
     loadState,
     saveState,
     clearState,
-    normalizeState
+    normalizeState,
+    normalizeLoreProgress,
+    loadLoreProgress,
+    saveLoreProgress
 };

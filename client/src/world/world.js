@@ -25,6 +25,36 @@ const COIN_REWARD = 1;
 const FARM_BASE_COST = 10;
 const FARM_LEVEL_REWARD = 2;
 
+const WORLD_LORE_EVENTS = Object.freeze({
+    initialization: Object.freeze({
+        era: 1,
+        titleKey: 'lore.world.initialization.title',
+        textKey: 'lore.world.initialization.text',
+        duration: 9000
+    }),
+
+    firstResource: Object.freeze({
+        era: 1,
+        titleKey: 'lore.world.firstResource.title',
+        textKey: 'lore.world.firstResource.text',
+        duration: 6000
+    }),
+
+    farmOnline: Object.freeze({
+        era: 1,
+        titleKey: 'lore.world.farmOnline.title',
+        textKey: 'lore.world.farmOnline.text',
+        duration: 7000
+    }),
+
+    unknownStructure: Object.freeze({
+        era: 1,
+        titleKey: 'lore.world.unknownStructure.title',
+        textKey: 'lore.world.unknownStructure.text',
+        duration: 8000
+    })
+});
+
 const SPHERE_RADIUS_MULTIPLIER = 1.5;
 const SPHERE_MIN_SCALE = 0.50;
 
@@ -109,6 +139,7 @@ class World {
         };
 
         this.lastSavedAt = 0;
+        this.loreProgress = storage.loadLoreProgress();
         this.lastTapTime = 0;
         this.hintTimer = null;
         this.passiveTimer = null;
@@ -136,7 +167,9 @@ class World {
         this.startPassiveIncome();
         this.render();
 
-        this.showHint(i18n.t('hints.tapFarm'));
+        if (!this.showLoreEvent('initialization')) {
+            this.showHint(i18n.t('hints.tapFarm'));
+        }
     }
 
     loadSavedState() {
@@ -448,7 +481,11 @@ class World {
             if (economy.getBalance() < FARM_BASE_COST) {
                 economy.add(COIN_REWARD);
                 this.saveState();
-                this.showHint('🪙 +1');
+
+                if (!this.showLoreEvent('firstResource')) {
+                    this.showHint('🪙 +1');
+                }
+
                 this.render();
                 return;
             }
@@ -463,9 +500,11 @@ class World {
 
             this.saveState();
 
-            this.showHint(
-                i18n.t('buildings.farm.built')
-            );
+            if (!this.showLoreEvent('farmOnline')) {
+                this.showHint(
+                    i18n.t('buildings.farm.built')
+                );
+            }
 
             this.render();
             return;
@@ -495,9 +534,13 @@ class World {
         }
 
         if (!economy.canAfford(building.cost)) {
-            this.showHint(
-                `${i18n.t('hints.insufficient')} ${building.cost} 🪙`
-            );
+            const feedback =
+                `${i18n.t('hints.insufficient')} ${building.cost} 🪙`;
+
+            if (!this.showLoreEvent('unknownStructure', feedback)) {
+                this.showHint(feedback);
+            }
+
             return;
         }
 
@@ -511,11 +554,14 @@ class World {
 
         this.saveState();
 
-        this.showHint(
+        const feedback =
             `${building.icon} ${i18n.t(
                 `buildings.${id}.built`
-            )}`
-        );
+            )}`;
+
+        if (!this.showLoreEvent('unknownStructure', feedback)) {
+            this.showHint(feedback);
+        }
 
         if (id === 'workshop') {
             this.startPassiveIncome();
@@ -637,6 +683,7 @@ class World {
 
         clearTimeout(this.hintTimer);
 
+        this.hintElement.classList.remove('is-lore');
         this.hintElement.textContent = message;
         this.hintElement.classList.add('is-visible');
 
@@ -645,6 +692,40 @@ class World {
                 this.hintElement.classList.remove('is-visible');
             }
         }, 1800);
+    }
+
+    showLoreEvent(eventId, additionalText = '') {
+        const event = WORLD_LORE_EVENTS[eventId];
+
+        if (
+            !event ||
+            this.loreProgress.seenEvents.includes(eventId) ||
+            !this.hintElement
+        ) {
+            return false;
+        }
+
+        this.loreProgress.seenEvents.push(eventId);
+        storage.saveLoreProgress(this.loreProgress);
+
+        clearTimeout(this.hintTimer);
+
+        const message = [
+            i18n.t(event.titleKey),
+            i18n.t(event.textKey),
+            additionalText
+        ].filter(Boolean).join('\n\n');
+
+        this.hintElement.textContent = message;
+        this.hintElement.classList.add('is-lore', 'is-visible');
+
+        this.hintTimer = setTimeout(() => {
+            if (this.hintElement) {
+                this.hintElement.classList.remove('is-visible', 'is-lore');
+            }
+        }, event.duration);
+
+        return true;
     }
 
     applySphereProjection(element, worldX, worldY) {
@@ -854,7 +935,8 @@ export {
     World,
     WORLD_WIDTH,
     WORLD_HEIGHT,
-    BUILDINGS
+    BUILDINGS,
+    WORLD_LORE_EVENTS
 };
 
 export default World;

@@ -237,6 +237,17 @@
         translate(-50%, 0);
 }
 
+.world-hint.is-lore {
+    width: min(560px, calc(100% - 32px));
+
+    padding: 14px 18px;
+
+    white-space: pre-line;
+    text-align: left;
+
+    line-height: 1.45;
+}
+
 .world-object {
     position: absolute;
 

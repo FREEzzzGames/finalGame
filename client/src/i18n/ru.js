@@ -26,6 +26,30 @@ const RU = Object.freeze({
         name: 'FREEzzzGames'
     }),
 
+    lore: Object.freeze({
+        world: Object.freeze({
+            initialization: Object.freeze({
+                title: 'SYSTEM // INITIALIZATION',
+                text: 'Система не помнит, кто её запустил.\nВ памяти отсутствуют первые записи.\n\nДоступен только один сектор.\n\nOBJECT: FARM\n\nСтранно.\n\nПочему система начинает с фермы?\nПочему некоторые объекты уже существуют в её структуре?\n\nИ главное —\nкто оставил здесь этот мир?'
+            }),
+
+            firstResource: Object.freeze({
+                title: 'СОБЫТИЕ СИСТЕМЫ',
+                text: 'Первичный цикл завершён.\nПолучен ресурс: 🪙 1\nСистема продолжает работу.'
+            }),
+
+            farmOnline: Object.freeze({
+                title: 'СТРУКТУРА АКТИВНА',
+                text: 'Первый объект активирован.\nСистема больше не пуста.\n\nНо она уже знала, что делать.'
+            }),
+
+            unknownStructure: Object.freeze({
+                title: 'ОБНАРУЖЕНА НЕИЗВЕСТНАЯ СТРУКТУРА',
+                text: 'Объект присутствовал в системе до активации.\nПроисхождение: неизвестно.\nДоступ: ограничен.'
+            })
+        })
+    }),
+
     buildings: Object.freeze({
         farm: Object.freeze({
             title: 'ФЕРМА',
