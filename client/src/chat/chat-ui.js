@@ -16,6 +16,8 @@
  * будут добавлены отдельным этапом.
  */
 
+import ApiClient from '../api/client.js';
+import TelegramAdapter from '../telegram/telegram.js?v=0.4.0';
 import chat from './chat.js';
 import rooms from './rooms.js';
 import avatars from './avatars.js';
@@ -356,7 +358,7 @@ class ChatUI {
             this.messagesElement.scrollHeight;
     }
 
-    submit() {
+    async submit() {
         if (!this.input) {
             return false;
         }
@@ -366,6 +368,40 @@ class ChatUI {
 
         if (!value) {
             return false;
+        }
+
+        /*
+         * Telegram Mini App:
+         * authenticate on the server and mirror the message
+         * into the selected Telegram forum topic.
+         */
+        const initData =
+            TelegramAdapter.getInitData();
+
+        if (initData) {
+            try {
+                await ApiClient.request(
+                    '/chat/message',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-telegram-init-data': initData
+                        },
+                        body: JSON.stringify({
+                            room: this.chat.getRoom(),
+                            text: value
+                        })
+                    }
+                );
+            } catch (error) {
+                console.warn(
+                    '[FREEzzzGames] Chat message was not archived:',
+                    error?.code || error
+                );
+
+                return false;
+            }
         }
 
         const message =
