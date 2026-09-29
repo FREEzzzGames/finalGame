@@ -11,10 +11,10 @@ import TelegramAdapter from '../telegram/telegram.js?v=0.4.0';
 import TelegramTheme from '../telegram/theme.js?v=0.2.0';
 import Session from '../session/session.js?v=0.1.0';
 import World from '../world/world.js?v=0.4.0';
-import ChatWidget from '../chat/chat-widget.js?v=0.3.0';
+import ChatWidget from '../chat/chat-widget.js?v=0.4.1';
 import LoreWidget from '../lore/lore-widget.js?v=0.4.0';
 
-const APP_VERSION = '0.5.0';
+const APP_VERSION = '0.5.1';
 
 const appRoot = document.querySelector('#app');
 const bootScreen = document.querySelector('#boot-screen');
