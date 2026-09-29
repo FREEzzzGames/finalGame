@@ -11,6 +11,8 @@
 
 const http = require('http');
 
+const { startIdBot } = require('./telegram/id-bot');
+
 const {
     handleApi
 } = require('./api');
@@ -123,6 +125,8 @@ if (require.main === module) {
             console.log(
                 `FREEzzzGames server listening on ${host}:${port}`
             );
+
+            startIdBot();
         })
         .catch(error => {
             console.error(
