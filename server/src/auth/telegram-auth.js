@@ -18,7 +18,9 @@ const crypto = require('crypto');
 const MAX_INIT_DATA_AGE_SECONDS = 24 * 60 * 60;
 
 const getBotToken = () => {
-    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const token =
+        process.env.TELEGRAM_BOT_TOKEN ||
+        process.env.ID_BOT_TOKEN;
 
     if (!token || typeof token !== 'string') {
         throw new Error('TELEGRAM_BOT_TOKEN is not configured');
