@@ -12,17 +12,17 @@ const ROOM_CONFIG = Object.freeze({
     main: Object.freeze({
         key: 'main',
         threadEnv: 'TELEGRAM_MAIN_THREAD_ID',
-        fallbackThreadId: 2
+        fallbackThreadId: null
     }),
     games: Object.freeze({
         key: 'games',
         threadEnv: 'TELEGRAM_GAMES_THREAD_ID',
-        fallbackThreadId: 3
+        fallbackThreadId: null
     }),
     relax: Object.freeze({
         key: 'relax',
         threadEnv: 'TELEGRAM_RELAX_THREAD_ID',
-        fallbackThreadId: 4
+        fallbackThreadId: null
     }),
     global: Object.freeze({
         key: 'main',
@@ -40,13 +40,19 @@ const getConfig = () => {
         process.env.TELEGRAM_BOT_TOKEN;
 
     const chatId =
-        process.env.TELEGRAM_CHAT_ID ||
-        '-1004308818461';
+        process.env.TELEGRAM_CHAT_ID;
 
     if (!token || typeof token !== 'string') {
         return {
             configured: false,
             reason: 'TELEGRAM_BOT_TOKEN_NOT_CONFIGURED'
+        };
+    }
+
+    if (!chatId || typeof chatId !== 'string') {
+        return {
+            configured: false,
+            reason: 'TELEGRAM_CHAT_ID_NOT_CONFIGURED'
         };
     }
 
@@ -97,7 +103,7 @@ const getThreadId = room => {
         }
     }
 
-    return config.fallbackThreadId;
+    return null;
 };
 
 const sanitizeText = (value, maxLength) => {
