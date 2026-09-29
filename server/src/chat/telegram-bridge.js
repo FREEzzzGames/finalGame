@@ -27,7 +27,7 @@ const ROOM_CONFIG = Object.freeze({
     global: Object.freeze({
         key: 'main',
         threadEnv: 'TELEGRAM_MAIN_THREAD_ID',
-        fallbackThreadId: 2
+        fallbackThreadId: null
     })
 });
 
