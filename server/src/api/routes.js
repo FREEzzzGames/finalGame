@@ -4,8 +4,7 @@
  * FREEzzzGames
  * API routes module
  *
- * Registers the minimal default API routes.
- * Server integration is handled separately.
+ * Registers the default API routes.
  */
 
 const {
@@ -20,6 +19,10 @@ const {
     getState
 } = require('../users/state-route');
 
+const {
+    postMessage
+} = require('../chat/chat-route');
+
 const registerDefaultRoutes = () => {
     registerRoute(
         'GET',
@@ -31,6 +34,12 @@ const registerDefaultRoutes = () => {
         'GET',
         '/state',
         context => getState(context)
+    );
+
+    registerRoute(
+        'POST',
+        '/chat/message',
+        context => postMessage(context)
     );
 };
 
