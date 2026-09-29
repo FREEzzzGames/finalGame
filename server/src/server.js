@@ -10,6 +10,8 @@
  */
 
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
 const { startIdBot } = require('./telegram/id-bot');
 
@@ -19,6 +21,71 @@ const {
 
 const DEFAULT_HOST = '0.0.0.0';
 const DEFAULT_PORT = 3000;
+const CLIENT_ROOT = path.resolve(__dirname, '../../client');
+
+const MIME_TYPES = {
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'text/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.webp': 'image/webp',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2'
+};
+
+const serveClient = (request, response) => {
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+        return false;
+    }
+
+    const requestPath = (request.url || '/').split('?')[0];
+    const relativePath = requestPath === '/'
+        ? 'index.html'
+        : requestPath.replace(/^\/+/, '');
+    const filePath = path.resolve(CLIENT_ROOT, relativePath);
+
+    if (!filePath.startsWith(CLIENT_ROOT + path.sep)) {
+        return false;
+    }
+
+    try {
+        let target = filePath;
+        if (fs.statSync(target).isDirectory()) {
+            target = path.join(target, 'index.html');
+        }
+
+        const stat = fs.statSync(target);
+        if (!stat.isFile()) return false;
+
+        response.statusCode = 200;
+        response.setHeader(
+            'Content-Type',
+            MIME_TYPES[path.extname(target).toLowerCase()] ||
+                'application/octet-stream'
+        );
+        response.setHeader(
+            'Cache-Control',
+            target.endsWith('index.html')
+                ? 'no-cache'
+                : 'public, max-age=3600'
+        );
+
+        if (request.method === 'HEAD') {
+            response.end();
+        } else {
+            fs.createReadStream(target).pipe(response);
+        }
+
+        return true;
+    } catch (_) {
+        return false;
+    }
+};
 
 const host = process.env.HOST || DEFAULT_HOST;
 const port = Number.parseInt(
@@ -56,6 +123,10 @@ const server = http.createServer(async (request, response) => {
                 status: 'ok'
             }));
 
+            return;
+        }
+
+        if (serveClient(request, response)) {
             return;
         }
 
