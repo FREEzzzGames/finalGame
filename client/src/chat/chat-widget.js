@@ -22,7 +22,7 @@
  * контейнер ChatUI поверх приложения.
  */
 
-import ChatUI from './chat-ui.js';
+import ChatUI from './chat-ui.js?v=0.4.1';
 import chat from './chat.js';
 import rooms from './rooms.js';
 import avatars from './avatars.js';
